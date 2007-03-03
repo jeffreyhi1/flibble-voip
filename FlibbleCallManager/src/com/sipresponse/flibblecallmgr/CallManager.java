@@ -44,7 +44,7 @@ public class CallManager
     private Object vectorSync = new Object();
     private ConcurrentHashMap callMap = new ConcurrentHashMap(); 
     private FlibbleSipProvider provider = new FlibbleSipProvider(this);
-    private LineManager lineManager = new LineManager();
+    private LineManager lineManager = new LineManager(this);
 
     /**
      * Constructor.
@@ -82,28 +82,33 @@ public class CallManager
         provider.initialize();
     }
 
-    public FlibbleResult addLine(String sipUrlString, boolean register)
+    public String addLine(String sipUrlString,
+                                 String displayName,
+                                 boolean register)
     {
-        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        String lineHandle = null;
         SipURI sipUrl = null;
         try
         {
             sipUrl = (SipURI)provider.addressFactory.createURI(sipUrlString);
-            lineManager.addLine(sipUrlString, register);
-            result = FlibbleResult.RESULT_SUCCESS;
+            lineHandle = lineManager.addLine(sipUrlString, displayName, register);
         }
         catch (ParseException e)
         {
             e.printStackTrace();
         }
-        return result;
-        
+        return lineHandle;
     }
-    public FlibbleResult placeCall(String sipUri)
+    
+    public FlibbleResult placeCall(String lineHandle,
+            String sipUri)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
-        PlaceCallAction placeCall = new PlaceCallAction();
+        
+        PlaceCallAction placeCall = new PlaceCallAction(this);
+        placeCall.setLineHandle(lineHandle);
         placeCall.setSipUri(sipUri);
+        
         placeCall.start();
         
         return result;
@@ -130,5 +135,20 @@ public class CallManager
         {
             flibbleListeners.remove(listener);
         }
+    }
+
+    public FlibbleSipProvider getProvider()
+    {
+        return provider;
+    }
+
+    public LineManager getLineManager()
+    {
+        return lineManager;
+    }
+
+    public void setLineManager(LineManager lineManager)
+    {
+        this.lineManager = lineManager;
     }    
 }

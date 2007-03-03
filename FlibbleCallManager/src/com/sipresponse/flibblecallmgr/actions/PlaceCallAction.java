@@ -18,14 +18,37 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.actions;
 
+import gov.nist.javax.sip.Utils;
+
+import java.util.ArrayList;
+
+import javax.sip.SipProvider;
+import javax.sip.address.Address;
+import javax.sip.address.SipURI;
+import javax.sip.header.CSeqHeader;
+import javax.sip.header.CallIdHeader;
+import javax.sip.header.ContentTypeHeader;
+import javax.sip.header.FromHeader;
+import javax.sip.header.MaxForwardsHeader;
+import javax.sip.header.ToHeader;
+import javax.sip.header.ViaHeader;
+import javax.sip.message.Request;
+
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.Line;
+import com.sipresponse.flibblecallmgr.LineManager;
+
 public class PlaceCallAction extends Thread
 {
-    private String sipUri;
+    private String sipUriString;
     private int timeout = 60000;
     private String lineHandle;
-    public PlaceCallAction()
+    private CallManager callMgr;
+    
+    public PlaceCallAction(CallManager callMgr)
     {
-        
+        this.callMgr = callMgr;
     }
     
     public String getLineHandle()
@@ -40,12 +63,12 @@ public class PlaceCallAction extends Thread
     
     public String getSipUri()
     {
-        return sipUri;
+        return sipUriString;
     }
     
-    public void setSipUri(String sipUri)
+    public void setSipUri(String sipUriString)
     {
-        this.sipUri = sipUri;
+        this.sipUriString = sipUriString;
     }
     
     public int getTimeout()
@@ -60,5 +83,59 @@ public class PlaceCallAction extends Thread
     
     public void run()
     {
+        FlibbleSipProvider flibbleProvider = callMgr.getProvider();
+        SipProvider sipProvider = flibbleProvider.sipProvider;
+        LineManager lineMgr = callMgr.getLineManager();
+        Line fromLine = lineMgr.getLine(lineHandle);
+        
+        try
+        {
+            String fromUser = fromLine.getUser();
+            String fromHost = fromLine.getHost();
+            String fromDisplayName = fromLine.getDisplayName();
+    
+            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(sipUriString);
+    
+            // create >From Header
+            SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);
+    
+            Address fromNameAddress = flibbleProvider.addressFactory.createAddress(fromAddress);
+            fromNameAddress.setDisplayName(fromDisplayName);
+            FromHeader fromHeader = flibbleProvider.headerFactory.createFromHeader(fromNameAddress,
+                    Utils.generateTag());
+            
+    
+            // create To Header
+            Address toNameAddress = flibbleProvider.addressFactory.createAddress(toUri);
+            ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(toNameAddress,null);
+    
+            // Create ViaHeaders
+            ArrayList viaHeaders = new ArrayList();
+            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader("127.0.0.1", sipProvider.getListeningPoint("udp").getPort(),"udp", null);
+            // add via headers
+            viaHeaders.add(viaHeader);
+    
+            // Create ContentTypeHeader
+            ContentTypeHeader contentTypeHeader = flibbleProvider.headerFactory.createContentTypeHeader("application", "sdp");
+    
+            // Create a new CallId header
+            CallIdHeader callIdHeader;
+            callIdHeader = sipProvider.getNewCallId();
+    
+            // Create a new Cseq header
+            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader(1,Request.INVITE);
+    
+            // Create a new MaxForwardsHeader
+            MaxForwardsHeader maxForwards = flibbleProvider.headerFactory.createMaxForwardsHeader(70);
+    
+            // Create the request.
+            Request request = flibbleProvider.messageFactory.createRequest(toUri,
+                    Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
+                    toHeader, viaHeaders, maxForwards);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

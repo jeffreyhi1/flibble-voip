@@ -18,9 +18,12 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
+import javax.sip.address.SipURI;
+
 public class Line
 {
-    private String sipUrl;
+    private SipURI sipUri;
+    private String displayName;
     private boolean register;
     private String handle;
     public String getHandle()
@@ -39,12 +42,29 @@ public class Line
     {
         this.register = register;
     }
-    public String getSipUrl()
+    public SipURI getSipUri()
     {
-        return sipUrl;
+        return sipUri;
     }
-    public void setSipUrl(String sipUrl)
+    public void setSipUri(SipURI sipUrl)
     {
-        this.sipUrl = sipUrl;
+        this.sipUri = sipUrl;
     }
+    public String getHost()
+    {
+        return sipUri.getHost();
+    }
+    public String getUser()
+    {
+        return sipUri.getUser();
+    }
+    public String getDisplayName()
+    {
+        return displayName;
+    }
+    public void setDisplayName(String displayName)
+    {
+        this.displayName = displayName;
+    }
+    
 }
