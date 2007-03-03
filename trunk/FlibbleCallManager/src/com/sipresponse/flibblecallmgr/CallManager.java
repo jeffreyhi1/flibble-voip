@@ -20,6 +20,8 @@ package com.sipresponse.flibblecallmgr;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.sip.SipProvider;
+
 import com.sipresponse.flibblecallmgr.media.FlibbleMediaProvider;
 
 /**
@@ -36,6 +38,7 @@ public class CallManager
     private FlibbleMediaProvider mediaProvider;
     private FlibbleUiProvider uiProvider;
     private ConcurrentHashMap callMap = new ConcurrentHashMap(); 
+    private SipProvider provider;
 
     /**
      * Constructor.
