@@ -26,6 +26,7 @@ import javax.sip.SipProvider;
 import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.actions.PlaceCallAction;
 
 /**
  * Object is central to flibble-voip.
@@ -101,6 +102,9 @@ public class CallManager
     public FlibbleResult placeCall(String sipUri)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        PlaceCallAction placeCall = new PlaceCallAction();
+        placeCall.setSipUri(sipUri);
+        placeCall.start();
         
         return result;
     }
