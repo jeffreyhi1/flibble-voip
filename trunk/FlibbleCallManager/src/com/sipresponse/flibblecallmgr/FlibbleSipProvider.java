@@ -39,7 +39,7 @@ import javax.sip.message.Request;
 
 public class FlibbleSipProvider implements SipListener
 {
-    private SipProvider sipProvider;
+    public SipProvider sipProvider;
     public AddressFactory addressFactory;
     public MessageFactory messageFactory;
     public HeaderFactory headerFactory;
@@ -105,7 +105,6 @@ public class FlibbleSipProvider implements SipListener
         }
         return true;
     }
-
 
     public void processDialogTerminated(DialogTerminatedEvent arg0)
     {
