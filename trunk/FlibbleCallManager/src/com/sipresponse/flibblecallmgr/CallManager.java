@@ -18,9 +18,12 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
+import java.text.ParseException;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.SipProvider;
+import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.media.FlibbleMediaProvider;
 
@@ -36,9 +39,11 @@ public class CallManager
 {
     private boolean useSoundCard;
     private FlibbleMediaProvider mediaProvider;
-    private FlibbleUiProvider uiProvider;
+    private Vector<FlibbleListener> flibbleListeners = new Vector<FlibbleListener>();
+    private Object vectorSync = new Object();
     private ConcurrentHashMap callMap = new ConcurrentHashMap(); 
-    private SipProvider provider;
+    private FlibbleSipProvider provider = new FlibbleSipProvider(this);
+    private LineManager lineManager = new LineManager();
 
     /**
      * Constructor.
@@ -50,16 +55,15 @@ public class CallManager
 
     /**
      * Initializes the CallManager.  The object must not be used
-     * before initialization.
+     * before initialization (with the exception of addListener).
      *
      * @param localIp
      * @param udpSipPort
      * @param mediaPortStart
      * @param mediaPortEnd
+     * @param proxyAddress SIP proxy address or host name.
+     * @param proxyPort Port value for the SIP proxy.
      * @param enableStun
-     * @param uiProvider The UI implementation.  Supply a null for an application 
-     *          with no user interface.
-     *          for an application with no media control.
      * @param useSoundCard True if the application wishes to utilize audio hardware.
      *          Otherwise, false.
      * 
@@ -68,12 +72,59 @@ public class CallManager
                            int udpSipPort,
                            int mediaPortStart,
                            int mediaPortEnd,
+                           String proxyAddress,
+                           int proxyPort,
                            boolean enableStun,
-                           FlibbleUiProvider uiProvider,
                            boolean useSoundCard)
     {
-        this.uiProvider = uiProvider;
         this.useSoundCard = useSoundCard;
+        provider.initialize();
     }
-                           
+
+    public FlibbleResult addLine(String sipUrlString, boolean register)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        SipURI sipUrl = null;
+        try
+        {
+            sipUrl = (SipURI)provider.addressFactory.createURI(sipUrlString);
+            lineManager.addLine(sipUrlString, register);
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        catch (ParseException e)
+        {
+            e.printStackTrace();
+        }
+        return result;
+        
+    }
+    public FlibbleResult placeCall(String sipUri)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        
+        return result;
+    }
+    
+    /**
+     * Registers a object to receive Flibble Events.
+     * @param listener Listener to add.
+     */
+    public void addListener(FlibbleListener listener)
+    {
+        synchronized (vectorSync)
+        {
+            flibbleListeners.add(listener);
+        }
+    }
+    /**
+     * Removes an object from the list of objects to receive Flibble Events.
+     * @param listener Listener to remove.
+     */
+    public void removeListener(FlibbleListener listener)
+    {
+        synchronized (vectorSync)
+        {
+            flibbleListeners.remove(listener);
+        }
+    }    
 }
