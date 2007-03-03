@@ -16,20 +16,44 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  ******************************************************************************/
-
 package com.sipresponse.flibblecallmgr;
 
 /**
- * Interface which defines a UserAgent UI entity. 
- * An object implementing this interface can be supplied to
- * the CallManager's initalize function.
- * If the UserAgent is headless (provides no UI),
- * the CallManager can be initialized without a
- * FlibbleUIProvider.
- * 
- * @author Mike Cohen
+ * Enumeration of flibble method invocation results.
+ * @author michael cohen
  */
-public interface FlibbleUiProvider
+public enum FlibbleResult
 {
-
+    RESULT_SUCCESS,
+    RESULT_INVALID_PARAMS,
+    RESULT_UNKNOWN_FAILURE
+    ;
+    
+    static String getDescription(FlibbleResult result)
+    {
+        String desc = null;
+        
+        // TODO - get these from an external file, 
+        //        for easier localization
+        switch (result)
+        {
+            case RESULT_SUCCESS:
+            {
+                desc = "OK";
+                break;
+            }
+            case RESULT_INVALID_PARAMS:
+            {
+                desc = "Invalid Parameters";
+                break;
+            }
+            case RESULT_UNKNOWN_FAILURE:
+            {
+                desc = "Unknown Failure";
+                break;
+            }
+        }
+        return desc;
+    }
+    
 }

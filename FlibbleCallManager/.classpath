@@ -5,9 +5,8 @@
 	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
 	<classpathentry kind="lib" path="lib/jmf.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-regexp-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/jain-sip-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/concurrent.jar"/>
-	<classpathentry kind="lib" path="lib/sip-sdp.jar"/>
+	<classpathentry kind="lib" path="lib/sip-sdp.jar" sourcepath="/jain-sip/src"/>
 	<classpathentry kind="lib" path="lib/nist-sdp-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/JainSipRi1.2.jar"/>
 	<classpathentry kind="lib" path="lib/JainSipApi1.2.jar"/>

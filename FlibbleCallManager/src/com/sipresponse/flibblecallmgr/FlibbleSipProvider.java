@@ -40,13 +40,17 @@ import javax.sip.message.Request;
 public class FlibbleSipProvider implements SipListener
 {
     private SipProvider sipProvider;
-    private AddressFactory addressFactory;
-    private MessageFactory messageFactory;
-    private HeaderFactory headerFactory;
+    public AddressFactory addressFactory;
+    public MessageFactory messageFactory;
+    public HeaderFactory headerFactory;
     private SipStack sipStack;
     private ListeningPoint udpListeningPoint;
-    
+    private CallManager callMgr;
 
+    public FlibbleSipProvider(CallManager callMgr)
+    {
+        this.callMgr = callMgr;
+    }
     public boolean initialize()
     {
         SipFactory sipFactory = null;
