@@ -29,6 +29,7 @@ import javax.sip.address.Address;
 import javax.sip.address.SipURI;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.ContactHeader;
 import javax.sip.header.ContentTypeHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.MaxForwardsHeader;
@@ -93,6 +94,11 @@ public class PlaceCallAction extends Thread
             Address toNameAddress = flibbleProvider.addressFactory.createAddress(toUri);
             ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(toNameAddress,null);
     
+            // create Contact Header
+            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(fromUser, callMgr.getLocalIp());
+            Address contactAddress = flibbleProvider.addressFactory.createAddress(contactUri);
+            ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
+            
             // Create ViaHeaders
             ArrayList viaHeaders = new ArrayList();
             ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
@@ -116,6 +122,7 @@ public class PlaceCallAction extends Thread
             Request request = flibbleProvider.messageFactory.createRequest(toUri,
                     Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
                     toHeader, viaHeaders, maxForwards);
+            request.setHeader(contactHeader);
             ResponseEvent response = flibbleProvider.sendRequest(request);
             flibbleProvider.ackResponse(response);
         }
