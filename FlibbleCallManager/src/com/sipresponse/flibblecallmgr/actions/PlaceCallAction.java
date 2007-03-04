@@ -22,6 +22,8 @@ import gov.nist.javax.sip.Utils;
 
 import java.util.ArrayList;
 
+import javax.sip.ClientTransaction;
+import javax.sip.ResponseEvent;
 import javax.sip.SipProvider;
 import javax.sip.address.Address;
 import javax.sip.address.SipURI;
@@ -33,6 +35,7 @@ import javax.sip.header.MaxForwardsHeader;
 import javax.sip.header.ToHeader;
 import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
+import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.FlibbleSipProvider;
@@ -111,7 +114,7 @@ public class PlaceCallAction extends Thread
     
             // Create ViaHeaders
             ArrayList viaHeaders = new ArrayList();
-            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader("127.0.0.1", sipProvider.getListeningPoint("udp").getPort(),"udp", null);
+            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
             // add via headers
             viaHeaders.add(viaHeader);
     
@@ -132,6 +135,8 @@ public class PlaceCallAction extends Thread
             Request request = flibbleProvider.messageFactory.createRequest(toUri,
                     Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
                     toHeader, viaHeaders, maxForwards);
+            ResponseEvent response = flibbleProvider.sendRequest(request);
+            flibbleProvider.ackResponse(response);
         }
         catch (Exception e)
         {

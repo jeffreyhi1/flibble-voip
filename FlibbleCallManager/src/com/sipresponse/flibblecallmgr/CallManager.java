@@ -38,6 +38,13 @@ import com.sipresponse.flibblecallmgr.actions.PlaceCallAction;
  */
 public class CallManager
 {
+    private String localIp;
+    private int udpSipPort;
+    private int mediaPortStart;
+    private int mediaPortEnd;
+    private String proxyAddress;
+    private int proxyPort;
+    boolean enableStun;    
     private boolean useSoundCard;
     private FlibbleMediaProvider mediaProvider;
     private Vector<FlibbleListener> flibbleListeners = new Vector<FlibbleListener>();
@@ -78,6 +85,13 @@ public class CallManager
                            boolean enableStun,
                            boolean useSoundCard)
     {
+        this.localIp = localIp;
+        this.udpSipPort = udpSipPort;
+        this.mediaPortStart = mediaPortStart;
+        this.mediaPortEnd = mediaPortEnd;
+        this.proxyAddress = proxyAddress;
+        this.proxyPort = proxyPort;
+        this.enableStun = enableStun;
         this.useSoundCard = useSoundCard;
         provider.initialize();
     }
@@ -150,5 +164,45 @@ public class CallManager
     public void setLineManager(LineManager lineManager)
     {
         this.lineManager = lineManager;
+    }
+
+    public boolean isEnableStun()
+    {
+        return enableStun;
+    }
+
+    public String getLocalIp()
+    {
+        return localIp;
+    }
+
+    public int getMediaPortEnd()
+    {
+        return mediaPortEnd;
+    }
+
+    public int getMediaPortStart()
+    {
+        return mediaPortStart;
+    }
+
+    public String getProxyAddress()
+    {
+        return proxyAddress;
+    }
+
+    public int getProxyPort()
+    {
+        return proxyPort;
+    }
+
+    public int getUdpSipPort()
+    {
+        return udpSipPort;
+    }
+
+    public boolean isUseSoundCard()
+    {
+        return useSoundCard;
     }    
 }
