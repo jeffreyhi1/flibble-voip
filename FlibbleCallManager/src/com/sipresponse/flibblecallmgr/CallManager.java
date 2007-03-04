@@ -29,8 +29,8 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleListener;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
-import com.sipresponse.flibblecallmgr.media.FlibbleMediaProvider;
-import com.sipresponse.flibblecallmgr.actions.PlaceCallAction;
+import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 /**
  * Object is central to flibble-voip.
@@ -100,14 +100,14 @@ public class CallManager
         provider.initialize();
     }
 
-    public String addLine(String sipUrlString,
+    public String addLine(String sipUriString,
                                  String displayName,
                                  boolean register)
     {
         String lineHandle = null;
         try
         {
-            lineHandle = lineManager.addLine(sipUrlString, displayName, register);
+            lineHandle = lineManager.addLine(sipUriString, displayName, register);
         }
         catch (Exception e)
         {
@@ -146,6 +146,7 @@ public class CallManager
             flibbleListeners.add(listener);
         }
     }
+    
     /**
      * Removes an object from the list of objects to receive Flibble Events.
      * @param listener Listener to remove.
@@ -208,7 +209,7 @@ public class CallManager
         return udpSipPort;
     }
 
-    public boolean isUseSoundCard()
+    public boolean getUseSoundCard()
     {
         return useSoundCard;
     }    
