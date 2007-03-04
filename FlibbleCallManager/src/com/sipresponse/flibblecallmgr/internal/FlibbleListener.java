@@ -17,7 +17,7 @@
  *   limitations under the License.
  ******************************************************************************/
 
-package com.sipresponse.flibblecallmgr;
+package com.sipresponse.flibblecallmgr.internal;
 
 /**
  * Interface which defines a UserAgent listener entity. 

@@ -25,6 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sip.SipProvider;
 import javax.sip.address.SipURI;
 
+import com.sipresponse.flibblecallmgr.internal.Call;
+import com.sipresponse.flibblecallmgr.internal.FlibbleListener;
+import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.media.FlibbleMediaProvider;
 import com.sipresponse.flibblecallmgr.actions.PlaceCallAction;
 
@@ -101,28 +105,31 @@ public class CallManager
                                  boolean register)
     {
         String lineHandle = null;
-        SipURI sipUrl = null;
         try
         {
-            sipUrl = (SipURI)provider.addressFactory.createURI(sipUrlString);
             lineHandle = lineManager.addLine(sipUrlString, displayName, register);
         }
-        catch (ParseException e)
+        catch (Exception e)
         {
             e.printStackTrace();
         }
         return lineHandle;
     }
     
-    public FlibbleResult placeCall(String lineHandle,
-            String sipUri)
+    public String createCall(String lineHandle, String sipUriString)
+    {
+        String callId = provider.sipProvider.getNewCallId().getCallId();
+        Call call = new Call(lineHandle, sipUriString, callId);
+        String callHandle = call.getHandle(); 
+        return callHandle;
+    }
+    
+    public FlibbleResult placeCall(String callHandle)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         
-        PlaceCallAction placeCall = new PlaceCallAction(this);
-        placeCall.setLineHandle(lineHandle);
-        placeCall.setSipUri(sipUri);
-        
+        Call call = Call.getCallByHandle(callHandle);
+        PlaceCallAction placeCall = new PlaceCallAction(this, call);
         placeCall.start();
         
         return result;
