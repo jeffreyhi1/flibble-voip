@@ -17,7 +17,7 @@
  *   limitations under the License.
  ******************************************************************************/
 
-package com.sipresponse.flibblecallmgr.media;
+package com.sipresponse.flibblecallmgr.internal.media;
 
 /**
  * Abstract class defining the media control interface. 

@@ -45,7 +45,7 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
-import com.sipresponse.flibblecallmgr.util.Signal;
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 public class FlibbleSipProvider implements SipListener
 {
