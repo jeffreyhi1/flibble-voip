@@ -38,40 +38,21 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
-import com.sipresponse.flibblecallmgr.FlibbleSipProvider;
-import com.sipresponse.flibblecallmgr.Line;
-import com.sipresponse.flibblecallmgr.LineManager;
+import com.sipresponse.flibblecallmgr.internal.Call;
+import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.LineManager;
 
 public class PlaceCallAction extends Thread
 {
-    private String sipUriString;
     private int timeout = 60000;
-    private String lineHandle;
     private CallManager callMgr;
+    private Call call;
     
-    public PlaceCallAction(CallManager callMgr)
+    public PlaceCallAction(CallManager callMgr, Call call)
     {
         this.callMgr = callMgr;
-    }
-    
-    public String getLineHandle()
-    {
-        return lineHandle;
-    }
-    
-    public void setLineHandle(String lineHandle)
-    {
-        this.lineHandle = lineHandle;
-    }
-    
-    public String getSipUri()
-    {
-        return sipUriString;
-    }
-    
-    public void setSipUri(String sipUriString)
-    {
-        this.sipUriString = sipUriString;
+        this.call = call;
     }
     
     public int getTimeout()
@@ -89,7 +70,7 @@ public class PlaceCallAction extends Thread
         FlibbleSipProvider flibbleProvider = callMgr.getProvider();
         SipProvider sipProvider = flibbleProvider.sipProvider;
         LineManager lineMgr = callMgr.getLineManager();
-        Line fromLine = lineMgr.getLine(lineHandle);
+        Line fromLine = lineMgr.getLine(call.getLineHandle());
         
         try
         {
@@ -97,7 +78,7 @@ public class PlaceCallAction extends Thread
             String fromHost = fromLine.getHost();
             String fromDisplayName = fromLine.getDisplayName();
     
-            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(sipUriString);
+            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(call.getSipUriString());
     
             // create >From Header
             SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);

@@ -16,7 +16,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  ******************************************************************************/
-package com.sipresponse.flibblecallmgr;
+package com.sipresponse.flibblecallmgr.internal;
 
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +44,7 @@ import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
+import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.util.Signal;
 
 public class FlibbleSipProvider implements SipListener
