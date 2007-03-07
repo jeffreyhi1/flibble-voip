@@ -19,6 +19,8 @@
 
 package com.sipresponse.flibblecallmgr.internal;
 
+import com.sipresponse.flibblecallmgr.Event;
+
 /**
  * Interface which defines a UserAgent listener entity. 
  * An object implementing this interface can be supplied to
@@ -30,5 +32,5 @@ package com.sipresponse.flibblecallmgr.internal;
  */
 public interface FlibbleListener
 {
-
+    public boolean onEvent(Event event);
 }
