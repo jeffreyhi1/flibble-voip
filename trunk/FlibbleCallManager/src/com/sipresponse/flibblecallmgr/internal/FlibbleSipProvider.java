@@ -118,7 +118,28 @@ public class FlibbleSipProvider implements SipListener
         return true;
     }
 
-    public ResponseEvent sendRequest(Request request)
+    public ResponseEvent waitForResponseEvent(ClientTransaction ct)
+    {
+        ResponseEvent responseEvent = null;
+        Signal signal = signals.get(ct);
+        if (null != signal)
+        {
+            try
+            {
+                responseEvent = signal.waitForResponseEvent(RESPONSE_TIMEOUT);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            if (responseEvent.getResponse().getStatusCode() >= 200)
+            {
+                signals.remove(ct);
+            }
+        }
+        return responseEvent;
+    }
+    public ClientTransaction sendRequest(Request request)
     {
         ResponseEvent responseEvent = null;
         ClientTransaction ct = null;
@@ -157,18 +178,9 @@ public class FlibbleSipProvider implements SipListener
             {
                 e.printStackTrace();
             }
-            try
-            {
-                responseEvent = signal.waitForResponseEvent(RESPONSE_TIMEOUT);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            signals.remove(ct);
         }
 
-        return responseEvent;
+        return ct;
     }
     
     public void ackResponse(ResponseEvent responseEvent)
@@ -230,6 +242,10 @@ public class FlibbleSipProvider implements SipListener
         {
             signal.setResponseEvent(responseEvent);
             signal.notifyResponseEvent();
+        }
+        else
+        {
+            System.err.println("Received transactionless response.");
         }
     }
 
