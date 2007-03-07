@@ -36,7 +36,6 @@ import javax.sip.header.MaxForwardsHeader;
 import javax.sip.header.ToHeader;
 import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
-import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.Call;
@@ -123,8 +122,39 @@ public class PlaceCallAction extends Thread
                     Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
                     toHeader, viaHeaders, maxForwards);
             request.setHeader(contactHeader);
-            ResponseEvent response = flibbleProvider.sendRequest(request);
-            flibbleProvider.ackResponse(response);
+            ClientTransaction ct = flibbleProvider.sendRequest(request);
+            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            int statusCode = responseEvent.getResponse().getStatusCode();
+            while (statusCode != 200)
+            {
+                if (statusCode >= 500)
+                {
+                    // todo - fire a failure event
+                }
+                else if (statusCode == 401 || statusCode == 403)
+                {
+                    // todo - reinvite with authentication
+                }
+                else if (statusCode > 400)
+                {
+                    // todo - fire a failure event
+                }
+                else if (statusCode == 183 || statusCode == 180)
+                {
+                    // todo - fire a remote ringing event
+                    responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                }
+                else if (statusCode < 200)
+                {
+                    responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                }
+                else if (statusCode >= 200 && statusCode < 400)
+                {
+                    // todo - fire a connected event
+                    flibbleProvider.ackResponse(responseEvent);
+                }
+                statusCode = responseEvent.getResponse().getStatusCode();
+            }
         }
         catch (Exception e)
         {
