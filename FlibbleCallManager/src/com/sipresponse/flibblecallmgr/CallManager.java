@@ -212,5 +212,17 @@ public class CallManager
     public boolean getUseSoundCard()
     {
         return useSoundCard;
-    }    
+    }   
+    
+    public void fireEvent(Event event)
+    {
+        synchronized (vectorSync)
+        {
+            for (FlibbleListener listener : flibbleListeners)
+            {
+                listener.onEvent(event);
+            }
+        }
+        return; 
+    }
 }
