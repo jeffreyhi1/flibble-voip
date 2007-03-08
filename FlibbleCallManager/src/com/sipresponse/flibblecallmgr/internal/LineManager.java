@@ -49,7 +49,8 @@ public class LineManager
         SipURI sipUri = null;
         try
         {
-            sipUri = (SipURI)callMgr.getProvider().addressFactory.createURI(sipUriString);
+            sipUri = (SipURI)InternalCallManager.getInstance()
+                .getProvider(callMgr).addressFactory.createURI(sipUriString);
         }
         catch (ParseException e)
         {

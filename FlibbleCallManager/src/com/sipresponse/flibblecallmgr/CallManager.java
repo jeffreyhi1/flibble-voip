@@ -28,6 +28,7 @@ import javax.sip.address.SipURI;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleListener;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
@@ -51,11 +52,6 @@ public class CallManager
     boolean enableStun;    
     private boolean useSoundCard;
     private FlibbleMediaProvider mediaProvider;
-    private Vector<FlibbleListener> flibbleListeners = new Vector<FlibbleListener>();
-    private Object vectorSync = new Object();
-    private ConcurrentHashMap callMap = new ConcurrentHashMap(); 
-    private FlibbleSipProvider provider = new FlibbleSipProvider(this);
-    private LineManager lineManager = new LineManager(this);
 
     /**
      * Constructor.
@@ -97,7 +93,9 @@ public class CallManager
         this.proxyPort = proxyPort;
         this.enableStun = enableStun;
         this.useSoundCard = useSoundCard;
-        provider.initialize();
+        InternalCallManager.getInstance().setProvider(this, new FlibbleSipProvider(this));
+        InternalCallManager.getInstance().getProvider(this).initialize();
+        InternalCallManager.getInstance().setLineManager(this, new LineManager(this));
     }
 
     public String addLine(String sipUriString,
@@ -107,7 +105,8 @@ public class CallManager
         String lineHandle = null;
         try
         {
-            lineHandle = lineManager.addLine(sipUriString, displayName, register);
+            lineHandle = InternalCallManager.getInstance().getLineManager(this)
+                .addLine(sipUriString, displayName, register);
         }
         catch (Exception e)
         {
@@ -118,7 +117,8 @@ public class CallManager
     
     public String createCall(String lineHandle, String sipUriString)
     {
-        String callId = provider.sipProvider.getNewCallId().getCallId();
+        String callId = InternalCallManager.getInstance().getProvider(this)
+            .sipProvider.getNewCallId().getCallId();
         Call call = new Call(lineHandle, sipUriString, callId);
         String callHandle = call.getHandle(); 
         return callHandle;
@@ -141,10 +141,7 @@ public class CallManager
      */
     public void addListener(FlibbleListener listener)
     {
-        synchronized (vectorSync)
-        {
-            flibbleListeners.add(listener);
-        }
+        InternalCallManager.getInstance().addListener(this, listener);
     }
     
     /**
@@ -153,26 +150,9 @@ public class CallManager
      */
     public void removeListener(FlibbleListener listener)
     {
-        synchronized (vectorSync)
-        {
-            flibbleListeners.remove(listener);
-        }
+        InternalCallManager.getInstance().removeListener(this, listener);
     }
 
-    public FlibbleSipProvider getProvider()
-    {
-        return provider;
-    }
-
-    public LineManager getLineManager()
-    {
-        return lineManager;
-    }
-
-    public void setLineManager(LineManager lineManager)
-    {
-        this.lineManager = lineManager;
-    }
 
     public boolean isEnableStun()
     {
@@ -214,15 +194,4 @@ public class CallManager
         return useSoundCard;
     }   
     
-    public void fireEvent(Event event)
-    {
-        synchronized (vectorSync)
-        {
-            for (FlibbleListener listener : flibbleListeners)
-            {
-                listener.onEvent(event);
-            }
-        }
-        return; 
-    }
 }
