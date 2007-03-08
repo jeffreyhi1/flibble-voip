@@ -132,7 +132,7 @@ public class FlibbleSipProvider implements SipListener
             {
                 e.printStackTrace();
             }
-            if (responseEvent.getResponse().getStatusCode() >= 200)
+            if (responseEvent != null && responseEvent.getResponse().getStatusCode() >= 200)
             {
                 signals.remove(ct);
             }
@@ -141,7 +141,7 @@ public class FlibbleSipProvider implements SipListener
     }
     public ClientTransaction sendRequest(Request request)
     {
-        ResponseEvent responseEvent = null;
+        System.err.println("Sending request: " + request.toString());
         ClientTransaction ct = null;
         boolean gotNewTx = false;
         int tries = 0;
@@ -236,6 +236,7 @@ public class FlibbleSipProvider implements SipListener
 
     public void processResponse(ResponseEvent responseEvent)
     {
+        System.err.println("Received Response: " + responseEvent.getResponse().toString());
         // find the client transaction signal for this response
         Signal signal = signals.get(responseEvent.getClientTransaction());
         if (null != signal)
@@ -263,5 +264,9 @@ public class FlibbleSipProvider implements SipListener
     public void processTransactionTerminated(TransactionTerminatedEvent arg0)
     {
         // TODO Auto-generated method stub
+    }
+    public SipStack getSipStack()
+    {
+        return sipStack;
     }
 }

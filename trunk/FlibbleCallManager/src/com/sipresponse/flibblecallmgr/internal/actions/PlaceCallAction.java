@@ -38,6 +38,10 @@ import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
@@ -126,36 +130,46 @@ public class PlaceCallAction extends Thread
             request.setHeader(contactHeader);
             ClientTransaction ct = flibbleProvider.sendRequest(request);
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
-            int statusCode = responseEvent.getResponse().getStatusCode();
-            while (statusCode != 200)
+            if (null == responseEvent)
             {
-                if (statusCode >= 500)
+                
+            }
+            else
+            {
+                int statusCode = responseEvent.getResponse().getStatusCode();
+                while (true)
                 {
-                    // todo - fire a failure event
+                    if (statusCode >= 500)
+                    {
+                        // todo - fire a failure event
+                        break;
+                    }
+                    else if (statusCode == 401 || statusCode == 403)
+                    {
+                        // todo - reinvite with authentication
+                    }
+                    else if (statusCode > 400)
+                    {
+                        EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, EventCode.CALL_FAILED, eventReason));
+                        break;
+                    }
+                    else if (statusCode == 183 || statusCode == 180)
+                    {
+                        // todo - fire a remote ringing event
+                        responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                    }
+                    else if (statusCode < 200)
+                    {
+                        responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                    }
+                    else if (statusCode >= 200 && statusCode < 400)
+                    {
+                        // todo - fire a connected event
+                        flibbleProvider.ackResponse(responseEvent);
+                    }
+                    statusCode = responseEvent.getResponse().getStatusCode();
                 }
-                else if (statusCode == 401 || statusCode == 403)
-                {
-                    // todo - reinvite with authentication
-                }
-                else if (statusCode > 400)
-                {
-                    // todo - fire a failure event
-                }
-                else if (statusCode == 183 || statusCode == 180)
-                {
-                    // todo - fire a remote ringing event
-                    responseEvent = flibbleProvider.waitForResponseEvent(ct);
-                }
-                else if (statusCode < 200)
-                {
-                    responseEvent = flibbleProvider.waitForResponseEvent(ct);
-                }
-                else if (statusCode >= 200 && statusCode < 400)
-                {
-                    // todo - fire a connected event
-                    flibbleProvider.ackResponse(responseEvent);
-                }
-                statusCode = responseEvent.getResponse().getStatusCode();
             }
         }
         catch (Exception e)

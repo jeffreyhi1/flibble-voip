@@ -19,10 +19,14 @@
 package com.sipresponse.flibblecallmgr;
 
 import java.text.ParseException;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.sip.ListeningPoint;
+import javax.sip.ObjectInUseException;
 import javax.sip.SipProvider;
+import javax.sip.SipStack;
 import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.internal.Call;
@@ -192,5 +196,77 @@ public class CallManager
     {
         return useSoundCard;
     }   
+    
+    public void destroy()
+    {
+        SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
+                .getSipStack();
+
+        try
+        {
+            if (sipStack == null)
+                return;
+            Iterator listeningPoints = sipStack.getListeningPoints();
+            if (listeningPoints != null)
+            {
+                while (listeningPoints.hasNext())
+                {
+                    ListeningPoint lp = (ListeningPoint) listeningPoints.next();
+                    try
+                    {
+                        sipStack.deleteListeningPoint(lp);
+                        lp = null;
+                    }
+                    catch (ObjectInUseException oiue)
+                    {
+                        oiue.printStackTrace();
+                    }
+                    listeningPoints = sipStack.getListeningPoints();
+                }
+            }
+            else
+            {
+
+            }
+
+            try
+            {
+                Thread.currentThread().sleep(200);
+            }
+            catch (InterruptedException ie)
+            {
+                ie.printStackTrace();
+            }
+
+            Iterator sipProviders = sipStack.getSipProviders();
+            if (sipProviders != null)
+            {
+                while (sipProviders.hasNext())
+                {
+                    SipProvider sp = (SipProvider) sipProviders.next();
+                    sp.removeSipListener(InternalCallManager.getInstance()
+                            .getProvider(this));
+                    try
+                    {
+                        sipStack.deleteSipProvider(sp);
+                        sp = null;
+                        System.out.println("One sip Provider removed!");
+                    }
+                    catch (ObjectInUseException oiue)
+                    {
+
+                    }
+                    sipProviders = sipStack.getSipProviders();
+                }
+            }
+            else
+            {
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }        
+    }
     
 }
