@@ -24,6 +24,14 @@ public class Event
     private EventCode eventCode;
     private EventReason eventReason;
     
+    public Event(EventType eventType,
+                 EventCode eventCode,
+                 EventReason eventReason)
+    {
+        this.eventType = eventType;
+        this.eventCode = eventCode;
+        this.eventReason = eventReason;
+    }
     public EventType getEventType()
     {
         return eventType;
