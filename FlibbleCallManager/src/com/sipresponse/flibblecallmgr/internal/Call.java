@@ -22,11 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Call
 {
-    private static ConcurrentHashMap<String, Call> handleMap = 
-        new ConcurrentHashMap<String, Call>();
-    private static ConcurrentHashMap<String, Call> callIdMap = 
-        new ConcurrentHashMap<String, Call>();
-    private static int handleCounter = 0;
     
     private String callId;
     private String handle;
@@ -40,9 +35,8 @@ public class Call
         this.lineHandle = lineHandle;
         this.sipUriString = sipUriString;
         this.callId = callId;
-        handle = Call.getNewHandle();
-        handleMap.put(handle, this);
-        callIdMap.put(callId, this);
+        handle = InternalCallManager.getInstance().getNewHandle();
+        InternalCallManager.getInstance().addCall(handle, this);
     }
     public String getCallId()
     {
@@ -75,19 +69,5 @@ public class Call
     public void setSipUriString(String sipUriString)
     {
         this.sipUriString = sipUriString;
-    }
-    public static Call getCallByHandle(String callHandle)
-    {
-        return handleMap.get(callHandle);
-    }
-    public static void removeCallByHandle(String callHandle)
-    {
-        handleMap.remove(callHandle);
-        return;
-    }
-    public static synchronized String getNewHandle()
-    {
-        Call.handleCounter++;
-        return new Integer(Call.handleCounter).toString();
     }
 }
