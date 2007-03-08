@@ -26,7 +26,6 @@ import javax.sip.SipProvider;
 import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.internal.Call;
-import com.sipresponse.flibblecallmgr.internal.FlibbleListener;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
