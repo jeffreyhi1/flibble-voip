@@ -40,6 +40,7 @@ import javax.sip.message.Request;
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 
@@ -67,9 +68,10 @@ public class PlaceCallAction extends Thread
     
     public void run()
     {
-        FlibbleSipProvider flibbleProvider = callMgr.getProvider();
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
+            .getProvider(callMgr);
         SipProvider sipProvider = flibbleProvider.sipProvider;
-        LineManager lineMgr = callMgr.getLineManager();
+        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
         Line fromLine = lineMgr.getLine(call.getLineHandle());
         
         try
