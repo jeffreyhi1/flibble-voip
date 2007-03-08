@@ -128,7 +128,7 @@ public class CallManager
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         
-        Call call = Call.getCallByHandle(callHandle);
+        Call call = InternalCallManager.getInstance().getCallByHandle(callHandle);
         PlaceCallAction placeCall = new PlaceCallAction(this, call);
         placeCall.start();
         
