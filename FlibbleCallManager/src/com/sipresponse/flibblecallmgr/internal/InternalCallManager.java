@@ -118,15 +118,22 @@ public class InternalCallManager
         handleMap.put(handle, call);
         callIdMap.put(call.getCallId(), call);
     }
+    
+    public Call getCallById(String callId)
+    {
+        return callIdMap.get(callId);
+    }
+    
     public Call getCallByHandle(String callHandle)
     {
         return handleMap.get(callHandle);
     }
+    
     public void removeCallByHandle(String callHandle)
     {
         handleMap.remove(callHandle);
-        return;
     }
+    
     public synchronized String getNewHandle()
     {
         handleCounter++;

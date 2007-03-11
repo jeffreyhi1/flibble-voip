@@ -20,6 +20,8 @@ package com.sipresponse.flibblecallmgr.internal;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.sip.Dialog;
+
 public class Call
 {
     
@@ -27,6 +29,7 @@ public class Call
     private String handle;
     private String lineHandle;
     private String sipUriString;
+    private Dialog dialog;
     
     public Call(String lineHandle,
             String sipUriString,
@@ -69,5 +72,13 @@ public class Call
     public void setSipUriString(String sipUriString)
     {
         this.sipUriString = sipUriString;
+    }
+    public Dialog getDialog()
+    {
+        return dialog;
+    }
+    public void setDialog(Dialog dialog)
+    {
+        this.dialog = dialog;
     }
 }

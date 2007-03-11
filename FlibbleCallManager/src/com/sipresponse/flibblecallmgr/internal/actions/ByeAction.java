@@ -18,7 +18,63 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.actions;
 
-public class ByeAction
-{
+import javax.sip.ClientTransaction;
+import javax.sip.Dialog;
+import javax.sip.ResponseEvent;
+import javax.sip.SipException;
+import javax.sip.SipProvider;
+import javax.sip.message.Request;
 
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.Call;
+import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.LineManager;
+
+public class ByeAction extends Thread
+{
+    private int timeout = 4000;
+    private CallManager callMgr;
+    private Call call;
+    
+    public ByeAction(CallManager callMgr, Call call)
+    {
+        this.callMgr = callMgr;
+        this.call = call;
+    }
+    
+    public int getTimeout()
+    {
+        return timeout;
+    }
+    
+    public void setTimeout(int timeout)
+    {
+        this.timeout = timeout;
+    }
+    
+    public void run()
+    {
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
+            .getProvider(callMgr);
+        Dialog dialog = call.getDialog();
+        Request bye = null;
+        try
+        {
+            bye = dialog.createRequest(Request.BYE);
+        }
+        catch (SipException e)
+        {
+            e.printStackTrace();
+        }
+        if (null != bye)
+        {
+            ClientTransaction ct = flibbleProvider.sendRequest(bye);
+            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            // response should be 200 ok...
+        }
+        
+    }
 }
+
