@@ -33,6 +33,7 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
+import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
@@ -132,9 +133,26 @@ public class CallManager
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         
         Call call = InternalCallManager.getInstance().getCallByHandle(callHandle);
-        PlaceCallAction placeCall = new PlaceCallAction(this, call);
-        placeCall.start();
+        if (null != call)
+        {
+            PlaceCallAction placeCall = new PlaceCallAction(this, call);
+            placeCall.start();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;
+    }
+    
+    public FlibbleResult endCall(String callHandle)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         
+        Call call = InternalCallManager.getInstance().getCallByHandle(callHandle);
+        if (null != call)
+        {
+            ByeAction bye = new ByeAction(this, call);
+            bye.start();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
         return result;
     }
     
@@ -197,7 +215,7 @@ public class CallManager
         return useSoundCard;
     }   
     
-    public void destroy()
+    public void destroyCallManager()
     {
         SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
                 .getSipStack();

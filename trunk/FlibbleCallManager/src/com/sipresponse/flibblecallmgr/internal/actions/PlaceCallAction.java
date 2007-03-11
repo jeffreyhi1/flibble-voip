@@ -141,7 +141,8 @@ public class PlaceCallAction extends Thread
                 {
                     if (statusCode >= 500)
                     {
-                        // todo - fire a failure event
+                        EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, EventCode.CALL_FAILED, eventReason));
                         break;
                     }
                     else if (statusCode == 401 || statusCode == 403)
@@ -150,8 +151,17 @@ public class PlaceCallAction extends Thread
                     }
                     else if (statusCode > 400)
                     {
-                        EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
+                        EventReason eventReason = EventReason.CALL_FAILED_REQUEST;
+                        if (486 == statusCode)
+                        {
+                            eventReason = EventReason.CALL_BUSY;
+                        }
+                        else if (482 == statusCode)
+                        {
+                            eventReason = EventReason.CALL_FAILED_LOOP_DETECTED;
+                        }
                         InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, EventCode.CALL_FAILED, eventReason));
+                        
                         break;
                     }
                     else if (statusCode == 183 || statusCode == 180)

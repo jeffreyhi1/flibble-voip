@@ -22,6 +22,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.ClientTransaction;
+import javax.sip.Dialog;
 import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
 import javax.sip.InvalidArgumentException;
@@ -39,6 +40,7 @@ import javax.sip.TransactionTerminatedEvent;
 import javax.sip.TransactionUnavailableException;
 import javax.sip.address.AddressFactory;
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.CallIdHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
@@ -239,6 +241,19 @@ public class FlibbleSipProvider implements SipListener
         System.err.println("Received Response: " + responseEvent.getResponse().toString());
         // find the client transaction signal for this response
         Signal signal = signals.get(responseEvent.getClientTransaction());
+        Dialog dialog = responseEvent.getClientTransaction().getDialog();
+        
+        if (dialog != null)
+        {
+            CallIdHeader callIdHeader = (CallIdHeader) responseEvent.getResponse().getHeader(CallIdHeader.NAME);
+            String callId = callIdHeader.getCallId();
+            Call call = InternalCallManager.getInstance().getCallById(callId);
+            if (null != call)
+            {
+                call.setDialog(dialog);
+            }
+        }
+        
         if (null != signal)
         {
             signal.setResponseEvent(responseEvent);
