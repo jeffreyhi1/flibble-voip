@@ -22,15 +22,12 @@ import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
 import javax.sip.SipException;
-import javax.sip.SipProvider;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
-import com.sipresponse.flibblecallmgr.internal.Line;
-import com.sipresponse.flibblecallmgr.internal.LineManager;
 
 public class ByeAction extends Thread
 {

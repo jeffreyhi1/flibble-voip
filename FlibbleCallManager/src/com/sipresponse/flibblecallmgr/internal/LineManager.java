@@ -19,6 +19,7 @@
 package com.sipresponse.flibblecallmgr.internal;
 
 import java.text.ParseException;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.address.SipURI;
@@ -31,10 +32,14 @@ public class LineManager
     private static int lineHandle = 0;
     private ConcurrentHashMap<String, Line> lines = 
         new ConcurrentHashMap<String, Line>();
+    private Vector<Line> linesVector = new Vector<Line>();
     private CallManager callMgr;
+    private RegistrationManager regMgr;
     
     public LineManager(CallManager callMgr)
     {
+        regMgr = new RegistrationManager(callMgr);
+        regMgr.start();
         this.callMgr = callMgr;
     }
     public String addLine(String sipUriString, String displayName, boolean register)
@@ -44,7 +49,7 @@ public class LineManager
         {
             sLineHandle = new Integer(++lineHandle).toString();
         }
-        Line line = new Line();
+        Line line = new Line(callMgr);
         line.setHandle(sLineHandle);
         SipURI sipUri = null;
         try
@@ -59,8 +64,9 @@ public class LineManager
         if (null != sipUri)
         {
             line.setSipUri(sipUri);
-            line.setRegister(register);
+            line.setRegisterEnabled(register);
             lines.put(sLineHandle, line);
+            linesVector.add(line);
         }
         else
         {
@@ -68,9 +74,15 @@ public class LineManager
         }
         return sLineHandle;
     }
+    
     public Line getLine(String sLineHandle)
     {
         return lines.get(sLineHandle);
+    }
+    
+    public Vector<Line> getLines()
+    {
+        return linesVector;
     }
 
 }

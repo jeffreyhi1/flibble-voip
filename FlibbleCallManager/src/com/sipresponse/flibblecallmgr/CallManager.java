@@ -18,17 +18,12 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
-import java.text.ParseException;
 import java.util.Iterator;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.ListeningPoint;
 import javax.sip.ObjectInUseException;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
-import javax.sip.address.SipURI;
-
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
@@ -261,14 +256,13 @@ public class CallManager
             {
                 while (sipProviders.hasNext())
                 {
-                    SipProvider sp = (SipProvider) sipProviders.next();
-                    sp.removeSipListener(InternalCallManager.getInstance()
+                    SipProvider sipProvider = (SipProvider) sipProviders.next();
+                    sipProvider.removeSipListener(InternalCallManager.getInstance()
                             .getProvider(this));
                     try
                     {
-                        sipStack.deleteSipProvider(sp);
-                        sp = null;
-                        System.out.println("One sip Provider removed!");
+                        sipStack.deleteSipProvider(sipProvider);
+                        sipProvider = null;
                     }
                     catch (ObjectInUseException oiue)
                     {

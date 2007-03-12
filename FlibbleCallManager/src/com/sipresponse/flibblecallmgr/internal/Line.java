@@ -20,12 +20,27 @@ package com.sipresponse.flibblecallmgr.internal;
 
 import javax.sip.address.SipURI;
 
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
+
 public class Line
 {
     private SipURI sipUri;
     private String displayName;
     private boolean register;
     private String handle;
+    private long lastRegisterTimestamp;
+    private RegisterStatus status;
+    private int registerPeriod = 3600;
+    private CallManager callMgr;
+    
+    public Line(CallManager callMgr)
+    {
+        this.callMgr = callMgr;
+    }
     public String getHandle()
     {
         return handle;
@@ -34,13 +49,17 @@ public class Line
     {
         this.handle = handle;
     }
-    public boolean isRegister()
+    public boolean getRegisterEnabled()
     {
         return register;
     }
-    public void setRegister(boolean register)
+    public void setRegisterEnabled(boolean register)
     {
         this.register = register;
+        if (register == false)
+        {
+            setStatus(RegisterStatus.PROVISIONED, EventReason.LINE_NORMAL);
+        }
     }
     public SipURI getSipUri()
     {
@@ -66,5 +85,72 @@ public class Line
     {
         this.displayName = displayName;
     }
+    public long getLastRegisterTimestamp()
+    {
+        return lastRegisterTimestamp;
+    }
+    public void setLastRegisterTimestamp(long lastRegisterTimestamp)
+    {
+        this.lastRegisterTimestamp = lastRegisterTimestamp;
+    }
+    public RegisterStatus getStatus()
+    {
+        return status;
+    }
+    public void setStatus(RegisterStatus status, EventReason reason)
+    {
+        this.status = status;
+        Event event = null; 
+        switch (status)
+        {
+            case PROVISIONED:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_PROVISIONED, reason);                
+                break;
+            }
+            case REGISTERING:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_REGISTERING, reason);                
+                break;
+            }
+            case REGISTERED:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_REGISTERED, reason);                
+                break;
+            }
+            case REGISTER_FAILED:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_REGISTER_FAILED, reason);                
+                break;
+            }
+            case UNREGISTERING:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTERING, reason);                
+                break;
+            }
+            case UNREGISTERED:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTERED, reason);                
+                break;
+            }
+            case UNREGISTER_FAILED:
+            {
+                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTER_FAILED, reason);                
+                break;
+            }
+        }
+        if (null != event)
+        {
+            InternalCallManager.getInstance().fireEvent(callMgr, event);
+        }
+    }
+    public int getRegisterPeriod()
+    {
+        return registerPeriod;
+    }
+    public void setRegisterPeriod(int registerPeriod)
+    {
+        this.registerPeriod = registerPeriod;
+    }    
     
 }
