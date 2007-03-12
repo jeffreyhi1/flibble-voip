@@ -30,7 +30,6 @@ public class InternalCallManager
     private Object vectorSync = new Object();
     private ConcurrentHashMap<CallManager, Vector<FlibbleListener>> flibbleListenerVectors = 
         new ConcurrentHashMap<CallManager, Vector<FlibbleListener>>();
-    private ConcurrentHashMap callMap = new ConcurrentHashMap(); 
     private ConcurrentHashMap<CallManager, FlibbleSipProvider> sipProviders = 
         new ConcurrentHashMap<CallManager, FlibbleSipProvider>();
     private ConcurrentHashMap<CallManager, LineManager> lineManagers = 
