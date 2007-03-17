@@ -36,6 +36,7 @@ public class Line
     private RegisterStatus status;
     private int registerPeriod = 3600;
     private CallManager callMgr;
+    private String password;
     
     public Line(CallManager callMgr)
     {
@@ -56,10 +57,6 @@ public class Line
     public void setRegisterEnabled(boolean register)
     {
         this.register = register;
-        if (register == false)
-        {
-            setStatus(RegisterStatus.PROVISIONED, EventReason.LINE_NORMAL);
-        }
     }
     public SipURI getSipUri()
     {
@@ -103,11 +100,6 @@ public class Line
         Event event = null; 
         switch (status)
         {
-            case PROVISIONED:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_PROVISIONED, reason);                
-                break;
-            }
             case REGISTERING:
             {
                 event = new Event(EventType.LINE, EventCode.LINE_REGISTERING, reason);                
@@ -151,6 +143,14 @@ public class Line
     public void setRegisterPeriod(int registerPeriod)
     {
         this.registerPeriod = registerPeriod;
+    }
+    public String getPassword()
+    {
+        return password;
+    }
+    public void setPassword(String password)
+    {
+        this.password = password;
     }    
     
 }
