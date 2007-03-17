@@ -9,11 +9,13 @@ import com.sipresponse.flibblecallmgr.FlibbleListener;
 public class PlaceCall implements FlibbleListener
 {
     private boolean shouldExit = false;
+    private CallManager callMgr = new CallManager();
+    private String lineHandle = null;
+    private String callHandle = null;
 
-    public void go()
+    private void go()
     {
-        CallManager callMgr = new CallManager();
-        callMgr.initialize("192.168.0.101",
+        callMgr.initialize("192.168.0.103",
                 5060,
                 9300,
                 9400,
@@ -21,10 +23,21 @@ public class PlaceCall implements FlibbleListener
                 5060,
                 false, true);
         callMgr.addListener(this);
-        String lineHandle = callMgr.addLine("sip:foo@192.168.0.101", "Foo Bar", false);
-        String callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
-        callMgr.placeCall(callHandle);
         
+        // create a registered line
+        lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", true, 300, "x616yzzy");
+        
+        // or, instead,
+        // create a provisioned line, and place the call:
+        // 
+        // lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", false, 0, null);
+        //callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
+        //callMgr.placeCall(callHandle);
+ 
+        
+        // wait for 30 seconds for the line to register,
+        // and for the call to go through
+        int count = 0;
         while (shouldExit == false)
         {
             try
@@ -36,24 +49,30 @@ public class PlaceCall implements FlibbleListener
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+            count++;
+            if (count > 3000)
+            {
+                shouldExit = true;
+            }
         }
-        callMgr.destroy();
+        callMgr.destroyCallManager();
         callMgr = null;
-
     }
-    /**
-     * @param args
-     */
-    public static void main(String[] args)
-    {
-        PlaceCall placeCall = new PlaceCall();
-        placeCall.go();
-
-    }
+    
     public boolean onEvent(Event event)
     {
-        
-        if (event.getEventType() == EventType.CALL)
+        if (event.getEventType() == EventType.LINE)
+        {
+            System.err.println("Line Event:  " +  event.getEventCode() + ", " + event.getEventReason());
+            
+            // place the call if the line is registered
+            if (event.getEventCode() == EventCode.LINE_REGISTERED)
+            {
+                callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
+                callMgr.placeCall(callHandle);
+            }
+        }
+        else if (event.getEventType() == EventType.CALL)
         {
             if (event.getEventCode() == EventCode.CALL_FAILED)
             {
@@ -63,4 +82,13 @@ public class PlaceCall implements FlibbleListener
         return false;
     }
 
+    /**
+     * @param args
+     */
+    public static void main(String[] args)
+    {
+        PlaceCall placeCall = new PlaceCall();
+        placeCall.go();
+
+    }
 }
