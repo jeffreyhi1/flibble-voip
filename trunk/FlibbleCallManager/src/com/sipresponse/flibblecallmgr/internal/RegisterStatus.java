@@ -3,7 +3,6 @@ package com.sipresponse.flibblecallmgr.internal;
 public enum RegisterStatus
 {
     UNKNOWN,
-    PROVISIONED,
     REGISTERING,
     REGISTERED,
     REGISTER_FAILED,

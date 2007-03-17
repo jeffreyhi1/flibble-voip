@@ -18,6 +18,9 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal;
 
+import gov.nist.javax.sip.Utils;
+
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,10 +41,17 @@ import javax.sip.SipStack;
 import javax.sip.TimeoutEvent;
 import javax.sip.TransactionTerminatedEvent;
 import javax.sip.TransactionUnavailableException;
+import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
+import javax.sip.address.SipURI;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.ContactHeader;
+import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
+import javax.sip.header.MaxForwardsHeader;
+import javax.sip.header.ToHeader;
+import javax.sip.header.ViaHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -284,4 +294,63 @@ public class FlibbleSipProvider implements SipListener
     {
         return sipStack;
     }
+    
+    public Request createRequest(String callId,
+            String requestMethod,
+            SipURI fromUri,
+            SipURI toUri)
+    {
+        SipURI requestURI = null;
+        try
+        {
+            requestURI = toUri;
+            
+            Address fromAddress = addressFactory.createAddress(addressFactory.createSipURI(
+                    fromUri.getUser(), fromUri.getHost()));
+            FromHeader fromHeader = headerFactory
+                    .createFromHeader(fromAddress, Utils.generateTag());
+            
+            Address toAddress = addressFactory.createAddress(addressFactory.createSipURI(
+                    toUri.getUser(), toUri.getHost()));
+            ToHeader toHeader = headerFactory.createToHeader(
+                    toAddress, null);
+
+            ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
+            ViaHeader viaHeader = headerFactory
+                    .createViaHeader(
+                            callMgr.getLocalIp(),
+                            udpListeningPoint.getPort(), udpListeningPoint.getTransport(), null);
+            viaHeaders.add(viaHeader);
+            
+            MaxForwardsHeader maxForwardsHeader = headerFactory
+                    .createMaxForwardsHeader(50);
+            
+            CallIdHeader callIdHeader = headerFactory.createCallIdHeader(callId);
+            CSeqHeader cSeqHeader = headerFactory.createCSeqHeader(1, requestMethod);
+            
+            Request request = messageFactory.createRequest(
+                    requestURI, requestMethod, callIdHeader, cSeqHeader,
+                    fromHeader, toHeader, viaHeaders, maxForwardsHeader);
+            
+            SipURI contactURI = addressFactory.createSipURI(
+                    fromUri.getUser(),
+                    callMgr.getLocalIp());
+
+            ContactHeader contactHeader = headerFactory
+                    .createContactHeader(addressFactory
+                            .createAddress(contactURI));
+            
+            contactURI.setPort(udpListeningPoint.getPort());
+            
+            request.addHeader(contactHeader);
+
+
+            return request;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+    
 }
