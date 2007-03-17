@@ -33,7 +33,7 @@ public class Line
     private boolean register;
     private String handle;
     private long lastRegisterTimestamp;
-    private RegisterStatus status;
+    private EventCode status;
     private int registerPeriod = 3600;
     private CallManager callMgr;
     private String password;
@@ -90,51 +90,18 @@ public class Line
     {
         this.lastRegisterTimestamp = lastRegisterTimestamp;
     }
-    public RegisterStatus getStatus()
+    public EventCode getStatus()
     {
         return status;
     }
-    public void setStatus(RegisterStatus status, EventReason reason)
+    public void setStatus(EventCode status, EventReason reason)
     {
         this.status = status;
         Event event = null; 
-        switch (status)
-        {
-            case REGISTERING:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_REGISTERING, reason);                
-                break;
-            }
-            case REGISTERED:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_REGISTERED, reason);                
-                break;
-            }
-            case REGISTER_FAILED:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_REGISTER_FAILED, reason);                
-                break;
-            }
-            case UNREGISTERING:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTERING, reason);                
-                break;
-            }
-            case UNREGISTERED:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTERED, reason);                
-                break;
-            }
-            case UNREGISTER_FAILED:
-            {
-                event = new Event(EventType.LINE, EventCode.LINE_UNREGISTER_FAILED, reason);                
-                break;
-            }
-        }
-        if (null != event)
-        {
-            InternalCallManager.getInstance().fireEvent(callMgr, event);
-        }
+        
+        InternalCallManager.getInstance().fireEvent(
+                callMgr,
+                new Event(EventType.LINE, status, reason));        
     }
     public int getRegisterPeriod()
     {

@@ -30,6 +30,7 @@ import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
 import javax.sip.InvalidArgumentException;
 import javax.sip.ListeningPoint;
+import javax.sip.ObjectInUseException;
 import javax.sip.PeerUnavailableException;
 import javax.sip.RequestEvent;
 import javax.sip.ResponseEvent;
@@ -157,27 +158,24 @@ public class FlibbleSipProvider implements SipListener
         ClientTransaction ct = null;
         boolean gotNewTx = false;
         int tries = 0;
-        while (tries < 80 && gotNewTx == false)
+        try
+        {
+            ct = sipProvider.getNewClientTransaction(request);
+            gotNewTx = true;
+        }
+        catch (TransactionUnavailableException e)
         {
             try
             {
-                ct = sipProvider.getNewClientTransaction(request);
-                gotNewTx = true;
+                Thread.sleep(50);
             }
-            catch (TransactionUnavailableException e)
+            catch (InterruptedException e1)
             {
-                try
-                {
-                    Thread.sleep(50);
-                }
-                catch (InterruptedException e1)
-                {
-                    e1.printStackTrace();
-                }
-                e.printStackTrace();
+                e1.printStackTrace();
             }
-            tries++;
+            e.printStackTrace();
         }
+        tries++;
         if (null != ct)
         {
             Signal signal = new Signal();

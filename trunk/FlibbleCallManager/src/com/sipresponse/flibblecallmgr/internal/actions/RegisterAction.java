@@ -12,10 +12,13 @@ import javax.sip.ObjectInUseException;
 import javax.sip.ResponseEvent;
 import javax.sip.SipProvider;
 import javax.sip.address.URI;
+import javax.sip.header.AuthorizationHeader;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.ExpiresHeader;
+import javax.sip.header.ProxyAuthenticateHeader;
 import javax.sip.header.ProxyAuthorizationHeader;
+import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
@@ -30,45 +33,47 @@ import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.util.DigestClientAuthenticationMethod;
+import com.sipresponse.flibblecallmgr.internal.util.MessageDigestAlgorithm;
 
 public class RegisterAction extends Thread
 {
     private int timeout = 8000;
+
     private CallManager callMgr;
+
     private Line line;
-    
+
     public RegisterAction(CallManager callMgr, Line line)
     {
         this.callMgr = callMgr;
         this.line = line;
     }
+
     public void run()
     {
-        InternalCallManager.getInstance().fireEvent(callMgr, new Event(EventType.LINE, EventCode.LINE_REGISTERING, EventReason.LINE_NORMAL));
+        line.setStatus(EventCode.LINE_REGISTERING, EventReason.LINE_NORMAL);
 
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
-            .getProvider(callMgr);
-        
+                .getProvider(callMgr);
+
         Request register = createRegisterRequest();
         if (register != null)
         {
-            flibbleProvider.sendRequest(register);
-            
+
             // create the transaction
             ClientTransaction ct = flibbleProvider.sendRequest(register);
-            
+
             // wait for a response
-            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            ResponseEvent responseEvent = flibbleProvider
+                    .waitForResponseEvent(ct);
             if (null != responseEvent)
             {
                 Response response = responseEvent.getResponse();
                 int responseCount = 0;
-                boolean bRegistered = false;
-                while (response.getStatusCode() != 200 &&
-                       responseCount < 8)
+                while (responseCount < 8)
                 {
-                    if (response.getStatusCode() == 401 ||
-                        response.getStatusCode() == 403)
+                    if (response.getStatusCode() == 401
+                            || response.getStatusCode() == 403)
                     {
                         try
                         {
@@ -79,55 +84,56 @@ public class RegisterAction extends Thread
                             e.printStackTrace();
                         }
                         Request registerWithAuth = createRegisterRequest();
-                        processResponseAuthorization(response, registerWithAuth);
-                        
+                        processResponseAuthorization(response, registerWithAuth, true);
+
                         ct = flibbleProvider.sendRequest(registerWithAuth);
-                        
+
                     }
                     else if (response.getStatusCode() == 200)
                     {
-                        bRegistered = true;
                         break;
                     }
                     responseCount++;
                     responseEvent = flibbleProvider.waitForResponseEvent(ct);
                     response = responseEvent.getResponse();
                 }
-                if (false == bRegistered)
+                if (response != null && response.getStatusCode() == 200)
                 {
-                    InternalCallManager.getInstance().fireEvent(callMgr, new Event(EventType.LINE, EventCode.LINE_REGISTER_FAILED, EventReason.LINE_NORMAL));
+                    line.setLastRegisterTimestamp(System.currentTimeMillis());
+                    line.setStatus(EventCode.LINE_REGISTERED, EventReason.LINE_NORMAL);
                 }
                 else
                 {
-                    InternalCallManager.getInstance().fireEvent(callMgr, new Event(EventType.LINE, EventCode.LINE_REGISTERED, EventReason.LINE_NORMAL));
+                    line.setStatus(EventCode.LINE_REGISTER_FAILED, EventReason.LINE_NORMAL);
                 }
             }
             else
             {
-                InternalCallManager.getInstance().fireEvent(callMgr, new Event(EventType.LINE, EventCode.LINE_REGISTER_FAILED, EventReason.LINE_NORMAL));
+                line.setStatus(EventCode.LINE_REGISTER_FAILED, EventReason.LINE_NORMAL);
             }
         }
     }
-    
+
     private Request createRegisterRequest()
     {
-        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance().getProvider(callMgr);
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
+                .getProvider(callMgr);
         Request register = null;
-        register = flibbleProvider.createRequest(Utils.generateCallIdentifier(callMgr.getLocalIp()),
-                                                 Request.REGISTER,
-                                                 line.getSipUri(),
-                                                 line.getSipUri());
+        register = flibbleProvider.createRequest(Utils
+                .generateCallIdentifier(callMgr.getLocalIp()),
+                Request.REGISTER, line.getSipUri(), line.getSipUri());
         ExpiresHeader expiresHeader = null;
         try
         {
-            expiresHeader = flibbleProvider.headerFactory.createExpiresHeader(line.getRegisterPeriod());
+            expiresHeader = flibbleProvider.headerFactory
+                    .createExpiresHeader(line.getRegisterPeriod());
         }
         catch (InvalidArgumentException e)
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    
+
         if (null != expiresHeader)
         {
             register.setExpires(expiresHeader);
@@ -136,41 +142,136 @@ public class RegisterAction extends Thread
         return register;
     }
 
-    public void processResponseAuthorization(Response response, Request newRequest)
+    public void processResponseAuthorization(Response response,
+            Request newRequest, boolean forRegister)
     {
-        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance().getProvider(callMgr);
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
+                .getProvider(callMgr);
         Request requestauth = null;
-        try {
-            String realm = "127.0.0.1";
-            System.out.println("processResponseAuthorization()");
-            String schema = ((ProxyAuthenticate)(response.getHeader(SIPHeaderNames.PROXY_AUTHENTICATE))).getScheme();
-            String nonce = ((ProxyAuthenticate)(response.getHeader(SIPHeaderNames.PROXY_AUTHENTICATE))).getNonce();
-            ProxyAuthorizationHeader proxyAuthheader = flibbleProvider.headerFactory.createProxyAuthorizationHeader(schema);
-            proxyAuthheader.setRealm(realm);
-            proxyAuthheader.setNonce(nonce);
-            proxyAuthheader.setAlgorithm("MD5");
-            proxyAuthheader.setUsername(line.getUser());
-            proxyAuthheader.setURI(newRequest.getRequestURI());
-            DigestClientAuthenticationMethod digest=new DigestClientAuthenticationMethod();
 
-            digest.initialize(realm,
-                    line.getUser(),
-                    newRequest.getRequestURI().toString(),
-                    nonce,line.getPassword(),
-                    ((CSeqHeader) response.getHeader(CSeqHeader.NAME)).getMethod(),
-                    null,
-                    "MD5");
-            System.out.println("Proxy Response antes de modificarlo : " + proxyAuthheader.getResponse());
-            String digestResponse = digest.generateResponse();
-            proxyAuthheader.setResponse(digestResponse);
-            requestauth.addHeader(proxyAuthheader);
-        }
-        catch (Exception ex)
+        System.out.println("processResponseAuthorization()");
+        // Proxy-Authorization header:
+        ProxyAuthenticateHeader authenticateHeader = (ProxyAuthenticateHeader) response
+                .getHeader(ProxyAuthenticateHeader.NAME);
+
+        WWWAuthenticateHeader wwwAuthenticateHeader = null;
+        CSeqHeader cseqHeader = (CSeqHeader) response
+                .getHeader(CSeqHeader.NAME);
+
+        String cnonce = null;
+        String uri = null;
+        
+        if (forRegister == true)
         {
-            System.out.println("processResponseAuthorization() Exception:");
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
+            uri = "sip:" + line.getHost(); 
+        }
+        else
+        {
+            uri = line.getSipUri().toString();
+        }
+        String method = cseqHeader.getMethod();
+        String nonce = null;
+        String realm = null;
+        String qop = null;
+        String nonceCount = "00000001";
+        String opaque = null;
+
+        try
+        {
+            if (authenticateHeader == null)
+            {
+                wwwAuthenticateHeader = (WWWAuthenticateHeader) response
+                        .getHeader(WWWAuthenticateHeader.NAME);
+
+                nonce = wwwAuthenticateHeader.getNonce();
+                realm = wwwAuthenticateHeader.getRealm();
+                if (realm == null)
+                {
+                    System.out
+                            .println("AuthenticationProcess, getProxyAuthorizationHeader(),"
+                                    + " ERROR: the realm is not part of the 401 response!");
+                    return;
+                }
+                cnonce = wwwAuthenticateHeader.getParameter("cnonce");
+                qop = wwwAuthenticateHeader.getParameter("qop");
+                opaque = wwwAuthenticateHeader.getParameter("opaque");
+            }
+            else
+            {
+                nonce = authenticateHeader.getNonce();
+                realm = authenticateHeader.getRealm();
+                if (realm == null)
+                {
+                    System.out
+                            .println("AuthenticationProcess, getProxyAuthorizationHeader(),"
+                                    + " ERROR: the realm is not part of the 407 response!");
+                    return;
+                }
+                cnonce = authenticateHeader.getParameter("cnonce");
+                qop = authenticateHeader.getParameter("qop");
+            }
+
+            if (qop != null)
+            {
+                // Integer randInt = new Integer(rand.nextInt());
+                // cnonce = randInt.toString();
+            }
+
+            String digestResponse = MessageDigestAlgorithm.calculateResponse(
+                    "MD5", line.getUser(), realm, line.getPassword(), nonce,
+                    nonceCount, cnonce, method, uri, null, qop);
+
+            if (authenticateHeader == null)
+            {
+                AuthorizationHeader header = flibbleProvider.headerFactory
+                        .createAuthorizationHeader("Digest");
+                header.setParameter("username", line.getUser());
+                header.setParameter("realm", realm);
+                if (null != opaque)
+                {
+                    header.setParameter("opaque", opaque);
+                }
+                if (qop != null)
+                {
+                    header.setParameter("qop", qop);
+                    if (null != cnonce)
+                    {
+                        header.setParameter("cnonce", cnonce);
+                        header.setParameter("nc", nonceCount);
+                    }
+                }
+                header.setParameter("algorithm", "MD5");
+                header.setParameter("uri", uri);
+                // header.setParameter("opaque","");
+                header.setParameter("nonce", nonce);
+                header.setParameter("response", digestResponse);
+
+                newRequest.setHeader(header);
+            }
+            else
+            {
+                ProxyAuthorizationHeader header = flibbleProvider.headerFactory
+                        .createProxyAuthorizationHeader("Digest");
+                header.setParameter("username", line.getUser());
+                header.setParameter("realm", realm);
+                if (qop != null)
+                {
+                    header.setParameter("qop", qop);
+                    header.setParameter("cnonce", cnonce);
+                    header.setParameter("nc", "00000001");
+                }
+                header.setParameter("algorithm", "MD5");
+                header.setParameter("uri", uri);
+                header.setParameter("nonce", nonce);
+                header.setParameter("response", digestResponse);
+
+                newRequest.setHeader(header);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
-    
+
 }

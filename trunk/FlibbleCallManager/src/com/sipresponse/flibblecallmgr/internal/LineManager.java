@@ -42,7 +42,7 @@ public class LineManager
         regMgr.start();
         this.callMgr = callMgr;
     }
-    public String addLine(String sipUriString, String displayName, boolean register)
+    public String addLine(String sipUriString, String displayName, boolean register, int registerPeriod, String password)
     {
         String sLineHandle = null;
         synchronized (syncObj)
@@ -50,7 +50,9 @@ public class LineManager
             sLineHandle = new Integer(++lineHandle).toString();
         }
         Line line = new Line(callMgr);
+        line.setRegisterPeriod(registerPeriod);
         line.setHandle(sLineHandle);
+        line.setPassword(password);
         SipURI sipUri = null;
         try
         {

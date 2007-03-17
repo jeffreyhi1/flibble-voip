@@ -33,56 +33,61 @@ import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 /**
- * Object is central to flibble-voip.
- * Allows for call control and media control.
- * Provides a simple to use interface for controlling voip calls. 
+ * Object is central to flibble-voip. Allows for call control and media control.
+ * Provides a simple to use interface for controlling voip calls.
  * 
  * @author Mike Cohen
- *
+ * 
  */
 public class CallManager
 {
     private String localIp;
+
     private int udpSipPort;
+
     private int mediaPortStart;
+
     private int mediaPortEnd;
+
     private String proxyAddress;
+
     private int proxyPort;
-    boolean enableStun;    
+
+    boolean enableStun;
+
     private boolean useSoundCard;
+
     private FlibbleMediaProvider mediaProvider;
 
     /**
      * Constructor.
-     *
+     * 
      */
     public CallManager()
     {
     }
 
     /**
-     * Initializes the CallManager.  The object must not be used
-     * before initialization (with the exception of addListener).
-     *
+     * Initializes the CallManager. The object must not be used before
+     * initialization (with the exception of addListener).
+     * 
      * @param localIp
      * @param udpSipPort
      * @param mediaPortStart
      * @param mediaPortEnd
-     * @param proxyAddress SIP proxy address or host name.
-     * @param proxyPort Port value for the SIP proxy.
+     * @param proxyAddress
+     *            SIP proxy address or host name.
+     * @param proxyPort
+     *            Port value for the SIP proxy.
      * @param enableStun
-     * @param useSoundCard True if the application wishes to utilize audio hardware.
-     *          Otherwise, false.
+     * @param useSoundCard
+     *            True if the application wishes to utilize audio hardware.
+     *            Otherwise, false.
      * 
      */
-    public void initialize(String localIp,
-                           int udpSipPort,
-                           int mediaPortStart,
-                           int mediaPortEnd,
-                           String proxyAddress,
-                           int proxyPort,
-                           boolean enableStun,
-                           boolean useSoundCard)
+    public void initialize(String localIp, int udpSipPort, int mediaPortStart,
+            int mediaPortEnd, String proxyAddress, int proxyPort,
+            boolean enableStun, boolean useSoundCard)
     {
         this.localIp = localIp;
         this.udpSipPort = udpSipPort;
@@ -92,20 +97,21 @@ public class CallManager
         this.proxyPort = proxyPort;
         this.enableStun = enableStun;
         this.useSoundCard = useSoundCard;
-        InternalCallManager.getInstance().setProvider(this, new FlibbleSipProvider(this));
+        InternalCallManager.getInstance().setProvider(this,
+                new FlibbleSipProvider(this));
         InternalCallManager.getInstance().getProvider(this).initialize();
-        InternalCallManager.getInstance().setLineManager(this, new LineManager(this));
+        InternalCallManager.getInstance().setLineManager(this,
+                new LineManager(this));
     }
 
-    public String addLine(String sipUriString,
-                                 String displayName,
-                                 boolean register)
+    public String addLine(String sipUriString, String displayName,
+            boolean register, int registerPeriod, String password)
     {
         String lineHandle = null;
         try
         {
             lineHandle = InternalCallManager.getInstance().getLineManager(this)
-                .addLine(sipUriString, displayName, register);
+                    .addLine(sipUriString, displayName, register, registerPeriod, password);
         }
         catch (Exception e)
         {
@@ -113,21 +119,22 @@ public class CallManager
         }
         return lineHandle;
     }
-    
+
     public String createCall(String lineHandle, String sipUriString)
     {
-        String callId = InternalCallManager.getInstance().getProvider(this)
-            .sipProvider.getNewCallId().getCallId();
+        String callId = InternalCallManager.getInstance().getProvider(this).sipProvider
+                .getNewCallId().getCallId();
         Call call = new Call(lineHandle, sipUriString, callId);
-        String callHandle = call.getHandle(); 
+        String callHandle = call.getHandle();
         return callHandle;
     }
-    
+
     public FlibbleResult placeCall(String callHandle)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
-        
-        Call call = InternalCallManager.getInstance().getCallByHandle(callHandle);
+
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
         if (null != call)
         {
             PlaceCallAction placeCall = new PlaceCallAction(this, call);
@@ -136,12 +143,13 @@ public class CallManager
         }
         return result;
     }
-    
+
     public FlibbleResult endCall(String callHandle)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
-        
-        Call call = InternalCallManager.getInstance().getCallByHandle(callHandle);
+
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
         if (null != call)
         {
             ByeAction bye = new ByeAction(this, call);
@@ -150,25 +158,28 @@ public class CallManager
         }
         return result;
     }
-    
+
     /**
      * Registers a object to receive Flibble Events.
-     * @param listener Listener to add.
+     * 
+     * @param listener
+     *            Listener to add.
      */
     public void addListener(FlibbleListener listener)
     {
         InternalCallManager.getInstance().addListener(this, listener);
     }
-    
+
     /**
      * Removes an object from the list of objects to receive Flibble Events.
-     * @param listener Listener to remove.
+     * 
+     * @param listener
+     *            Listener to remove.
      */
     public void removeListener(FlibbleListener listener)
     {
         InternalCallManager.getInstance().removeListener(this, listener);
     }
-
 
     public boolean isEnableStun()
     {
@@ -208,8 +219,8 @@ public class CallManager
     public boolean getUseSoundCard()
     {
         return useSoundCard;
-    }   
-    
+    }
+
     public void destroyCallManager()
     {
         SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
@@ -257,8 +268,8 @@ public class CallManager
                 while (sipProviders.hasNext())
                 {
                     SipProvider sipProvider = (SipProvider) sipProviders.next();
-                    sipProvider.removeSipListener(InternalCallManager.getInstance()
-                            .getProvider(this));
+                    sipProvider.removeSipListener(InternalCallManager
+                            .getInstance().getProvider(this));
                     try
                     {
                         sipStack.deleteSipProvider(sipProvider);
@@ -278,7 +289,7 @@ public class CallManager
         catch (Exception e)
         {
             e.printStackTrace();
-        }        
+        }
     }
-    
+
 }
