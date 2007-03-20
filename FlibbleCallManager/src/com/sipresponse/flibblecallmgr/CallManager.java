@@ -140,7 +140,7 @@ public class CallManager
     {
         String callId = InternalCallManager.getInstance().getProvider(this).sipProvider
                 .getNewCallId().getCallId();
-        Call call = new Call(lineHandle, sipUriString, callId);
+        Call call = new Call(this, lineHandle, sipUriString, callId);
         String callHandle = call.getHandle();
         return callHandle;
     }
