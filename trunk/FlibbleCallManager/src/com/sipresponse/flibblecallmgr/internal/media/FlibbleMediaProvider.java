@@ -23,7 +23,13 @@ package com.sipresponse.flibblecallmgr.internal.media;
  * Abstract class defining the media control interface. 
  * @author Mike Cohen
  */
-public class FlibbleMediaProvider
+public abstract class FlibbleMediaProvider
 {
-
+    public abstract void setUseMicrophone(boolean useMic);
+    public abstract void setAudioRender(boolean render);
+    public abstract void setMediaStreamSource(String mediaUrl);
+    public abstract void startRtpReceive(int port);
+    public abstract void stopRtpReceive(int port);
+    public abstract void startRtpSend(String destIp, int destPort);
+    public abstract void stopRtpSend(String destIp, int destPort);
 }
