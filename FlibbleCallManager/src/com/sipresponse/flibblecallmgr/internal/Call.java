@@ -18,20 +18,54 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal;
 
+import gov.nist.javax.sdp.fields.AttributeField;
+
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.sdp.Connection;
+import javax.sdp.MediaDescription;
+import javax.sdp.Origin;
+import javax.sdp.SdpException;
+import javax.sdp.SdpFactory;
+import javax.sdp.SessionDescription;
+import javax.sdp.SessionName;
+import javax.sdp.Time;
+import javax.sdp.Version;
 import javax.sip.Dialog;
+
+import com.sipresponse.flibblecallmgr.CallManager;
 
 public class Call
 {
-    
+    private CallManager callMgr;
     private String callId;
     private String handle;
     private String lineHandle;
     private String sipUriString;
     private Dialog dialog;
+    private SessionDescription localSdp;
+    private SessionDescription remoteSdp;
+    private Line line;
     
-    public Call(String lineHandle,
+    public SessionDescription getLocalSdp()
+    {
+        return localSdp;
+    }
+    public void setLocalSdp(SessionDescription localSdp)
+    {
+        this.localSdp = localSdp;
+    }
+    public SessionDescription getRemoteSdp()
+    {
+        return remoteSdp;
+    }
+    public void setRemoteSdp(SessionDescription remoteSdp)
+    {
+        this.remoteSdp = remoteSdp;
+    }
+    public Call(CallManager callMgr,
+            String lineHandle,
             String sipUriString,
             String callId)
     {
@@ -40,6 +74,7 @@ public class Call
         this.callId = callId;
         handle = InternalCallManager.getInstance().getNewHandle();
         InternalCallManager.getInstance().addCall(handle, this);
+        line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(lineHandle);
     }
     public String getCallId()
     {
@@ -80,5 +115,68 @@ public class Call
     public void setDialog(Dialog dialog)
     {
         this.dialog = dialog;
+    }
+    
+    public void createLocalSdp(String[] codecNames, SessionDescription remoteSdp)
+    {
+        String ipToShare = callMgr.getLocalIp();
+        try
+        {
+            localSdp = SdpFactory.getInstance().createSessionDescription();
+            Version version = SdpFactory.getInstance().createVersion(0);
+            localSdp.setVersion(version);
+            
+            long session = (long) ( 1000000 * Math.random());
+            Origin origin = SdpFactory.getInstance().createOrigin(
+                    line.getUser(),
+                    session,
+                    session + 1,
+                    "IN",
+                    "IP4",
+                    ipToShare);
+            localSdp.setOrigin(origin);
+            // Session Name
+            SessionName sessionName = SdpFactory.getInstance().createSessionName("-");
+            localSdp.setSessionName(sessionName);
+            // Connection
+            Connection connection = SdpFactory.getInstance().createConnection(ipToShare);
+            localSdp.setConnection(connection);
+
+            Time time = SdpFactory.getInstance().createTime();
+            Vector timeDescriptions = new Vector();
+            timeDescriptions.add(time);
+            localSdp.setTimeDescriptions(timeDescriptions);
+            
+            
+            // Media Description
+            MediaDescription mediaDescription = SdpFactory.getInstance()
+                    .createMediaDescription("audio",
+                            callMgr.getMediaPortStart(),
+                            1,
+                            "RTP/AVP",
+                            new int[] { 0 });            
+            
+            Vector attributes = new Vector();
+            AttributeField media = new AttributeField();
+            media.setName("rtpmap");
+            media.setValue("0" +
+                           " " +
+                           "PMCU" + 
+                           "/" + 
+                           "8000" +
+                           "/" + 
+                           "1");
+            attributes.add(media);
+            
+            mediaDescription.setAttributes(attributes);
+            Vector mediaDescriptions = new Vector();
+            mediaDescriptions.add(mediaDescription);
+            localSdp.setMediaDescriptions(mediaDescriptions);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        
     }
 }

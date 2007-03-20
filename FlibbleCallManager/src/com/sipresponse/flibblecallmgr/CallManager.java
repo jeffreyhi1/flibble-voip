@@ -42,21 +42,14 @@ import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 public class CallManager
 {
     private String localIp;
-
     private int udpSipPort;
-
     private int mediaPortStart;
-
     private int mediaPortEnd;
-
     private String proxyAddress;
-
     private int proxyPort;
-
     boolean enableStun;
-
+    private String stunServer;
     private boolean useSoundCard;
-
     private FlibbleMediaProvider mediaProvider;
 
     /**
@@ -71,23 +64,29 @@ public class CallManager
      * Initializes the CallManager. The object must not be used before
      * initialization (with the exception of addListener).
      * 
-     * @param localIp
-     * @param udpSipPort
-     * @param mediaPortStart
-     * @param mediaPortEnd
-     * @param proxyAddress
-     *            SIP proxy address or host name.
-     * @param proxyPort
-     *            Port value for the SIP proxy.
-     * @param enableStun
-     * @param useSoundCard
-     *            True if the application wishes to utilize audio hardware.
+     * @param localIp - The IP address to be bound to for receiving SIP messages.
+     *   This address (or the associated public address, if STUN is enabled)
+     *   will appear in the SIP contact and via headers, and in the SDP's origin
+     *   and destination headers.
+     * @param udpSipPort The udp port for receiving and sending SIP messages.
+     * @param mediaPortStart  The start of the range of allowable ports for use with RTP.
+     * @param mediaPortEnd The end of the range of allowable ports for use with RTP.
+     * @param proxyAddress SIP proxy address or host name.
+     * @param proxyPort Port value for the SIP proxy.
+     * @param enableStun Enables discovery of public the IP address.
+     * @param stunServer The stun server name or address to be used for STUN discovery.
+     * @param useSoundCard True if the application wishes to utilize audio hardware.
      *            Otherwise, false.
-     * 
      */
-    public void initialize(String localIp, int udpSipPort, int mediaPortStart,
-            int mediaPortEnd, String proxyAddress, int proxyPort,
-            boolean enableStun, boolean useSoundCard)
+    public void initialize(String localIp,
+            int udpSipPort,
+            int mediaPortStart,
+            int mediaPortEnd,
+            String proxyAddress,
+            int proxyPort,
+            boolean enableStun,
+            String stunServer,
+            boolean useSoundCard)
     {
         this.localIp = localIp;
         this.udpSipPort = udpSipPort;
@@ -96,6 +95,7 @@ public class CallManager
         this.proxyAddress = proxyAddress;
         this.proxyPort = proxyPort;
         this.enableStun = enableStun;
+        this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
         InternalCallManager.getInstance().setProvider(this,
                 new FlibbleSipProvider(this));
@@ -103,7 +103,17 @@ public class CallManager
         InternalCallManager.getInstance().setLineManager(this,
                 new LineManager(this));
     }
-
+    
+    /**
+     * Creates a line entity associated with a SIP URL (display name + uri).
+     * The line can be registered with a proxy, or provisioned. 
+     * @param sipUriString - The SIP uri associated with this line. eg "sip:foo@example.com"
+     * @param displayName - Display name portion of the SIP URL for this line.  Useful for caller ID.
+     * @param register - Whether or not to perform SIP registration with the proxy.
+     * @param registerPeriod - The requested period (in seconds) of the registration.
+     * @param password - A password used for registration authentication.
+     * @return Line handle associated with the line entity.
+     */
     public String addLine(String sipUriString, String displayName,
             boolean register, int registerPeriod, String password)
     {
@@ -120,6 +130,12 @@ public class CallManager
         return lineHandle;
     }
 
+    /**
+     * Creates a call entity on the requested line
+     * @param lineHandle The line handle to be used for the call.
+     * @param sipUriString The callee's SIP uri.
+     * @return Call handle of the newly created call entity.
+     */
     public String createCall(String lineHandle, String sipUriString)
     {
         String callId = InternalCallManager.getInstance().getProvider(this).sipProvider
@@ -129,6 +145,13 @@ public class CallManager
         return callHandle;
     }
 
+    /**
+     * Sends an INVITE to the remote party.  The response to the invite will
+     * come in the form of an event.  See FlibbleListener.onEvent.
+     * @param callHandle The call handle obtained by invoking createCall.
+     * @return A result indicating the validity of the parameters.  Actual
+     * results of the INVITE will come in the form of an event See FlibbleListener.onEvent. 
+     */
     public FlibbleResult placeCall(String callHandle)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
@@ -144,6 +167,12 @@ public class CallManager
         return result;
     }
 
+    /**
+     * Ends a currently connected call by sending a BYE message to the remote party.
+     * @param callHandle Handle of the call to end.
+     * @return A result indicating the validity of the parameters.  Actual
+     * results of the BYE will come in the form of an event See FlibbleListener.onEvent. 
+     */
     public FlibbleResult endCall(String callHandle)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
@@ -221,6 +250,10 @@ public class CallManager
         return useSoundCard;
     }
 
+    /**
+     * Tears down this call manager.
+     *
+     */
     public void destroyCallManager()
     {
         SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
