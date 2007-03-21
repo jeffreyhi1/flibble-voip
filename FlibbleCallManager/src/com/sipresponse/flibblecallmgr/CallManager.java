@@ -136,7 +136,8 @@ public class CallManager
      * @param sipUriString The callee's SIP uri.
      * @return Call handle of the newly created call entity.
      */
-    public String createCall(String lineHandle, String sipUriString)
+    public String createCall(String lineHandle,
+            String sipUriString)
     {
         String callId = InternalCallManager.getInstance().getProvider(this).sipProvider
                 .getNewCallId().getCallId();
@@ -152,7 +153,9 @@ public class CallManager
      * @return A result indicating the validity of the parameters.  Actual
      * results of the INVITE will come in the form of an event See FlibbleListener.onEvent. 
      */
-    public FlibbleResult placeCall(String callHandle)
+    public FlibbleResult placeCall(String callHandle,
+            MediaSourceType mediaSourceType,
+            String filename)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
 
@@ -160,7 +163,7 @@ public class CallManager
                 callHandle);
         if (null != call)
         {
-            PlaceCallAction placeCall = new PlaceCallAction(this, call);
+            PlaceCallAction placeCall = new PlaceCallAction(this, call, mediaSourceType, filename);
             placeCall.start();
             result = FlibbleResult.RESULT_SUCCESS;
         }

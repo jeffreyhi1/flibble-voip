@@ -20,8 +20,10 @@ package com.sipresponse.flibblecallmgr.internal.actions;
 
 import gov.nist.javax.sip.Utils;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 
+import javax.sdp.SessionDescription;
 import javax.sip.ClientTransaction;
 import javax.sip.ResponseEvent;
 import javax.sip.SipProvider;
@@ -30,6 +32,7 @@ import javax.sip.address.SipURI;
 import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.ContactHeader;
+import javax.sip.header.ContentLengthHeader;
 import javax.sip.header.ContentTypeHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.MaxForwardsHeader;
@@ -42,6 +45,7 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventReason;
 import com.sipresponse.flibblecallmgr.EventType;
+import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
@@ -53,11 +57,21 @@ public class PlaceCallAction extends Thread
     private int timeout = 60000;
     private CallManager callMgr;
     private Call call;
+    private MediaSourceType mediaSourceType;
+    private String mediaFilename;
+    private FlibbleSipProvider flibbleProvider;
     
-    public PlaceCallAction(CallManager callMgr, Call call)
+    public PlaceCallAction(CallManager callMgr,
+            Call call,
+            MediaSourceType mediaSourceType,
+            String mediaFilename)
     {
         this.callMgr = callMgr;
         this.call = call;
+        this.mediaSourceType = mediaSourceType;
+        this.mediaFilename = mediaFilename;
+        flibbleProvider = InternalCallManager.getInstance()
+            .getProvider(callMgr);
     }
     
     public int getTimeout()
@@ -72,62 +86,12 @@ public class PlaceCallAction extends Thread
     
     public void run()
     {
-        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
-            .getProvider(callMgr);
-        SipProvider sipProvider = flibbleProvider.sipProvider;
         LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
-        Line fromLine = lineMgr.getLine(call.getLineHandle());
         
         try
         {
-            String fromUser = fromLine.getUser();
-            String fromHost = fromLine.getHost();
-            String fromDisplayName = fromLine.getDisplayName();
-    
-            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(call.getSipUriString());
-    
-            // create >From Header
-            SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);
-    
-            Address fromNameAddress = flibbleProvider.addressFactory.createAddress(fromAddress);
-            fromNameAddress.setDisplayName(fromDisplayName);
-            FromHeader fromHeader = flibbleProvider.headerFactory.createFromHeader(fromNameAddress,
-                    Utils.generateTag());
-            
-    
-            // create To Header
-            Address toNameAddress = flibbleProvider.addressFactory.createAddress(toUri);
-            ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(toNameAddress,null);
-    
-            // create Contact Header
-            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(fromUser, callMgr.getLocalIp());
-            Address contactAddress = flibbleProvider.addressFactory.createAddress(contactUri);
-            ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
-            
-            // Create ViaHeaders
-            ArrayList viaHeaders = new ArrayList();
-            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
-            // add via headers
-            viaHeaders.add(viaHeader);
-    
-            // Create ContentTypeHeader
-            ContentTypeHeader contentTypeHeader = flibbleProvider.headerFactory.createContentTypeHeader("application", "sdp");
-    
-            // Create a new CallId header
-            CallIdHeader callIdHeader;
-            callIdHeader = sipProvider.getNewCallId();
-    
-            // Create a new Cseq header
-            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader(1,Request.INVITE);
-    
-            // Create a new MaxForwardsHeader
-            MaxForwardsHeader maxForwards = flibbleProvider.headerFactory.createMaxForwardsHeader(70);
-    
-            // Create the request.
-            Request request = flibbleProvider.messageFactory.createRequest(toUri,
-                    Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
-                    toHeader, viaHeaders, maxForwards);
-            request.setHeader(contactHeader);
+            Request request = createRequest();
+            setContent(request);
             ClientTransaction ct = flibbleProvider.sendRequest(request);
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
             if (null == responseEvent)
@@ -186,5 +150,98 @@ public class PlaceCallAction extends Thread
         {
             e.printStackTrace();
         }
+    }
+    
+    private void setContent(Request request)
+    {
+        // Create ContentTypeHeader
+        ContentTypeHeader contentTypeHeader = null;
+        ContentLengthHeader contentLengthHeader = null;
+        SessionDescription localSdp = null; 
+        
+        if (mediaSourceType != MediaSourceType.MEDIA_SOURCE_NONE)
+        {
+            try
+            {
+                call.createLocalSdp(null, null);
+                localSdp = call.getLocalSdp(); 
+                contentTypeHeader = flibbleProvider.headerFactory.createContentTypeHeader("application", "sdp");
+                contentLengthHeader = flibbleProvider.headerFactory.createContentLengthHeader(localSdp.toString().length());
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            request.setHeader(contentLengthHeader);
+            try
+            {
+                request.setContent(localSdp.toString(), contentTypeHeader);
+            }
+            catch (ParseException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    private Request createRequest()
+    {
+        SipProvider sipProvider = flibbleProvider.sipProvider;
+        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
+        Line fromLine = lineMgr.getLine(call.getLineHandle());
+        String fromUser = fromLine.getUser();
+        String fromHost = fromLine.getHost();
+        String fromDisplayName = fromLine.getDisplayName();
+        Request request = null;
+
+        try
+        {
+            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(call.getSipUriString());
+    
+            // create >From Header
+            SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);
+    
+            Address fromNameAddress = flibbleProvider.addressFactory.createAddress(fromAddress);
+            fromNameAddress.setDisplayName(fromDisplayName);
+            FromHeader fromHeader = flibbleProvider.headerFactory.createFromHeader(fromNameAddress,
+                    Utils.generateTag());
+            
+            // create To Header
+            Address toNameAddress = flibbleProvider.addressFactory.createAddress(toUri);
+            ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(toNameAddress,null);
+    
+            // create Contact Header
+            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(fromUser, callMgr.getLocalIp());
+            Address contactAddress = flibbleProvider.addressFactory.createAddress(contactUri);
+            ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
+            
+            // Create ViaHeaders
+            ArrayList viaHeaders = new ArrayList();
+            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
+            // add via headers
+            viaHeaders.add(viaHeader);
+    
+    
+            // Create a new CallId header
+            CallIdHeader callIdHeader;
+            callIdHeader = sipProvider.getNewCallId();
+    
+            // Create a new Cseq header
+            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader(1,Request.INVITE);
+    
+            // Create a new MaxForwardsHeader
+            MaxForwardsHeader maxForwards = flibbleProvider.headerFactory.createMaxForwardsHeader(70);
+    
+            // Create the request.
+            request = flibbleProvider.messageFactory.createRequest(toUri,
+                    Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
+                    toHeader, viaHeaders, maxForwards);
+            request.setHeader(contactHeader);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return request;
     }
 }
