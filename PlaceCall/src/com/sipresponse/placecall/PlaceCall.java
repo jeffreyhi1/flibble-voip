@@ -51,7 +51,7 @@ public class PlaceCall implements FlibbleListener
                 e.printStackTrace();
             }
             count++;
-            if (count > 3000)
+            if (count > 300)
             {
                 shouldExit = true;
             }
