@@ -73,9 +73,9 @@ public class CallManager
      * @param mediaPortEnd The end of the range of allowable ports for use with RTP.
      * @param proxyAddress SIP proxy address or host name.
      * @param proxyPort Port value for the SIP proxy.
-     * @param enableStun Enables discovery of public the IP address.
+     * @param enableStun Enables discovery of public IP address.
      * @param stunServer The stun server name or address to be used for STUN discovery.
-     * @param useSoundCard True if the application wishes to utilize audio hardware.
+     * @param useSoundCard True if the application wishes to use an audio hardware device.
      *            Otherwise, false.
      */
     public void initialize(String localIp,
