@@ -5,6 +5,7 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
+import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 public class PlaceCall implements FlibbleListener
 {
@@ -68,8 +69,11 @@ public class PlaceCall implements FlibbleListener
             // place the call if the line is registered
             if (event.getEventCode() == EventCode.LINE_REGISTERED)
             {
-                callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
-                callMgr.placeCall(callHandle);
+                callHandle = callMgr.createCall(lineHandle,
+                        "sip:reliagility@192.168.0.103");
+                callMgr.placeCall(callHandle,
+                        MediaSourceType.MEDIA_SOURCE_NONE,
+                        null);
             }
         }
         else if (event.getEventType() == EventType.CALL)
