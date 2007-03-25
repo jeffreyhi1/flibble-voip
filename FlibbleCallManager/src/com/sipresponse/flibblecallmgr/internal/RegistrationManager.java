@@ -4,7 +4,6 @@ import java.util.Vector;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.EventCode;
-import com.sipresponse.flibblecallmgr.EventReason;
 import com.sipresponse.flibblecallmgr.internal.actions.RegisterAction;
 
 public class RegistrationManager extends Thread

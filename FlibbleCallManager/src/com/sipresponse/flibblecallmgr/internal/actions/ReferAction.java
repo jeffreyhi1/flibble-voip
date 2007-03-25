@@ -58,6 +58,14 @@ public class ReferAction extends ActionThread
     
     public void run()
     {
+        if (referType == ReferActionType.BLIND)
+        {
+            blindTransfer();
+        }
+    }
+    
+    public void blindTransfer()
+    {
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
             .getProvider(callMgr);
         Dialog dialog = call.getDialog();

@@ -32,10 +32,8 @@
 
 package com.sipresponse.flibblecallmgr.internal.util;
 
-import javax.sip.*;
 import javax.sip.message.*;
 import javax.sip.header.*;
-import javax.sip.address.*;
 
 public interface AuthenticationMethod {
 

@@ -97,7 +97,6 @@ public class Line
     public void setStatus(EventCode status, EventReason reason)
     {
         this.status = status;
-        Event event = null; 
         
         InternalCallManager.getInstance().fireEvent(
                 callMgr,

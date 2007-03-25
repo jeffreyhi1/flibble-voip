@@ -31,7 +31,6 @@ import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
 import javax.sip.InvalidArgumentException;
 import javax.sip.ListeningPoint;
-import javax.sip.ObjectInUseException;
 import javax.sip.PeerUnavailableException;
 import javax.sip.RequestEvent;
 import javax.sip.ResponseEvent;
@@ -56,7 +55,6 @@ import javax.sip.header.ToHeader;
 import javax.sip.header.ViaHeader;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
-import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.util.Signal;
@@ -157,12 +155,10 @@ public class FlibbleSipProvider implements SipListener
     {
         System.err.println("Sending request: " + request.toString());
         ClientTransaction ct = null;
-        boolean gotNewTx = false;
         int tries = 0;
         try
         {
             ct = sipProvider.getNewClientTransaction(request);
-            gotNewTx = true;
         }
         catch (TransactionUnavailableException e)
         {
@@ -325,7 +321,7 @@ public class FlibbleSipProvider implements SipListener
                     .createMaxForwardsHeader(50);
             
             CallIdHeader callIdHeader = headerFactory.createCallIdHeader(callId);
-            CSeqHeader cSeqHeader = headerFactory.createCSeqHeader(1, requestMethod);
+            CSeqHeader cSeqHeader = headerFactory.createCSeqHeader((long)1, requestMethod);
             
             Request request = messageFactory.createRequest(
                     requestURI, requestMethod, callIdHeader, cSeqHeader,
