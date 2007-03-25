@@ -17,8 +17,9 @@ import org.junit.Test;
 
 public class CallManagerTest implements FlibbleListener
 {
-    private CallManager callMgr1;
-    private CallManager callMgr2;
+    private static Properties props;
+    private static CallManager callMgr1;
+    private static CallManager callMgr2;
     private String proxyAddress;
     private String lineHandle1;
     private String lineHandle2;
@@ -33,31 +34,40 @@ public class CallManagerTest implements FlibbleListener
     }
     @Before public void setUp()
     {
-        Properties props = new Properties();
-        try
+        if (props == null)
         {
-            props.load(new FileInputStream(System.getProperties().getProperty("user.home") + "/flibble-test.properties"));
-            proxyAddress = props.getProperty("proxyAddress");
+            props = new Properties();
+            try
+            {
+                props.load(new FileInputStream(System.getProperties().getProperty("user.home") + "/flibble-test.properties"));
+                proxyAddress = props.getProperty("proxyAddress");
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
         }
-        catch (FileNotFoundException e)
+        if (callMgr1 == null)
         {
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
+            initializeCallManagers();
         }
     }
     
     @After public void tearDown()
     {
+        if (callMgr1 != null && callMgr2 != null)
+        {
+            destroyCallManagers();
+        }
     }
     
     @Test public void addRemoveProvisionedLines()
     {
-        initializeCallManagers();
         addProvisionedLines();
-        destroyCallManagers();
     }
     
     @Test public void register()
@@ -122,7 +132,9 @@ public class CallManagerTest implements FlibbleListener
     private void destroyCallManagers()
     {
         callMgr1.destroyCallManager();
+        callMgr1 = null;
         callMgr2.destroyCallManager();
+        callMgr2 = null;
     }
             
 }   
