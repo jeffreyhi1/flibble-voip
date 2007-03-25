@@ -21,12 +21,10 @@ package com.sipresponse.flibblecallmgr.internal;
 import gov.nist.javax.sdp.fields.AttributeField;
 
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sdp.Connection;
 import javax.sdp.MediaDescription;
 import javax.sdp.Origin;
-import javax.sdp.SdpException;
 import javax.sdp.SdpFactory;
 import javax.sdp.SessionDescription;
 import javax.sdp.SessionName;
@@ -173,7 +171,7 @@ public class Call
             localSdp.setConnection(connection);
 
             Time time = SdpFactory.getInstance().createTime();
-            Vector timeDescriptions = new Vector();
+            Vector<Time> timeDescriptions = new Vector<Time>();
             timeDescriptions.add(time);
             localSdp.setTimeDescriptions(timeDescriptions);
             
@@ -186,7 +184,7 @@ public class Call
                             "RTP/AVP",
                             new int[] { 0 });            
             
-            Vector attributes = new Vector();
+            Vector<AttributeField> attributes = new Vector<AttributeField>();
             AttributeField media = new AttributeField();
             media.setName("rtpmap");
             media.setValue("0" +
@@ -199,7 +197,7 @@ public class Call
             attributes.add(media);
             
             mediaDescription.setAttributes(attributes);
-            Vector mediaDescriptions = new Vector();
+            Vector<MediaDescription> mediaDescriptions = new Vector<MediaDescription>();
             mediaDescriptions.add(mediaDescription);
             localSdp.setMediaDescriptions(mediaDescriptions);
         }

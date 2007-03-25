@@ -86,8 +86,6 @@ public class PlaceCallAction extends ActionThread
     
     public void run()
     {
-        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
-        
         try
         {
             Request request = createRequest();
@@ -224,7 +222,7 @@ public class PlaceCallAction extends ActionThread
             ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
             
             // Create ViaHeaders
-            ArrayList viaHeaders = new ArrayList();
+            ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
             ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
             // add via headers
             viaHeaders.add(viaHeader);
@@ -235,7 +233,7 @@ public class PlaceCallAction extends ActionThread
             callIdHeader = sipProvider.getNewCallId();
     
             // Create a new Cseq header
-            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader(1,Request.INVITE);
+            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader((long)1,Request.INVITE);
     
             // Create a new MaxForwardsHeader
             MaxForwardsHeader maxForwards = flibbleProvider.headerFactory.createMaxForwardsHeader(70);

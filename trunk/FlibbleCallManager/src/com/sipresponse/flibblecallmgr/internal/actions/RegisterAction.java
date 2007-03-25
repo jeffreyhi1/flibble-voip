@@ -134,7 +134,6 @@ public class RegisterAction extends ActionThread
     {
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
-        Request requestauth = null;
 
         System.out.println("processResponseAuthorization()");
         // Proxy-Authorization header:
