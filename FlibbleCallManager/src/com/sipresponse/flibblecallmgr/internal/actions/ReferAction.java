@@ -21,6 +21,7 @@ package com.sipresponse.flibblecallmgr.internal.actions;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
+import javax.sip.TransactionUnavailableException;
 import javax.sip.address.Address;
 import javax.sip.header.ReferToHeader;
 import javax.sip.message.Request;
@@ -85,13 +86,26 @@ public class ReferAction extends ActionThread
         }
         if (null != refer)
         {
-            ClientTransaction ct = flibbleProvider.sendRequest(refer);
-            //ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
-            // response should be 200 or 202..
+            
+            ClientTransaction ct = null;
+            try
+            {
+                ct = flibbleProvider.getSipProvider().getNewClientTransaction(refer);
+                dialog.sendRequest(ct);
+            }
+            catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+             //response should be 200 or 202..
 //            if (responseEvent != null &&
-//                responseEvent.getResponse() != null /*&&
-//                (responseEvent.getResponse().getStatusCode() % 100) == 2*/) 
-//                // dont care about repsonse code for blind transfers
+//                responseEvent.getResponse() != null &&
+//                (responseEvent.getResponse().getStatusCode() % 100) == 2) 
+                // dont care about repsonse code for blind transfers
+// also, SipExchange sends us a 481 for some reason, which doesn't bubble up...
+// reimplement the above when we move to sipXproxy??
             {
                 InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
                         EventCode.CALL_TRANSFER,
