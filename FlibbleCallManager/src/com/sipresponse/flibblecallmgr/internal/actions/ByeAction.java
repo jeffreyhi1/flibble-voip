@@ -22,6 +22,8 @@ import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
 import javax.sip.SipException;
+import javax.sip.TransactionDoesNotExistException;
+import javax.sip.TransactionUnavailableException;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -37,9 +39,6 @@ import com.sipresponse.flibblecallmgr.internal.Line;
 public class ByeAction extends ActionThread
 {
     private int timeout = 4000;
-    private CallManager callMgr;
-    private Call call;
-    private Line line;
     
     public ByeAction(CallManager callMgr, Call call)
     {
@@ -72,7 +71,18 @@ public class ByeAction extends ActionThread
         }
         if (null != bye)
         {
-            ClientTransaction ct = flibbleProvider.sendRequest(bye);
+            ClientTransaction ct = null;
+            try
+            {
+                ct = flibbleProvider.getSipProvider().getNewClientTransaction(bye);
+                dialog.sendRequest(ct);
+            }
+            catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
             // response should be 200 ok...
             

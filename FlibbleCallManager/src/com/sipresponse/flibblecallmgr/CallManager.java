@@ -306,7 +306,7 @@ public class CallManager
                     try
                     {
                         sipStack.deleteListeningPoint(lp);
-                        listeningPoints.remove();
+//                        listeningPoints.remove();
                         lp = null;
                     }
                     catch (ObjectInUseException oiue)

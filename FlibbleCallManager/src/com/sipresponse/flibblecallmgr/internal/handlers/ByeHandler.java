@@ -39,9 +39,6 @@ public class ByeHandler extends Handler
         
         // stop media here?
         
-        // remove call from internal call manager
-        InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
-        
         // send a 200 OK
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
             .getProvider(callMgr);
@@ -66,5 +63,8 @@ public class ByeHandler extends Handler
                 e.printStackTrace();
             }
         }
+        // remove call from internal call manager
+        InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
+        
     }
 }

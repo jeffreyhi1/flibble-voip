@@ -57,6 +57,7 @@ import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.handlers.ByeHandler;
 import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 public class FlibbleSipProvider implements SipListener
@@ -256,6 +257,7 @@ public class FlibbleSipProvider implements SipListener
         
         if (method.equals(Request.BYE))
         {
+            new ByeHandler(callMgr, call, requestEvent).execute();
         }
         else if (method.equals(Request.CANCEL))
         {
@@ -297,7 +299,8 @@ public class FlibbleSipProvider implements SipListener
         }
         else
         {
-            System.err.println("Received transactionless response.");
+            System.err.println("Received response not waited on:\n"
+                    + responseEvent.getResponse().toString());
         }
     }
 
@@ -362,6 +365,8 @@ public class FlibbleSipProvider implements SipListener
                     fromUri.getUser(),
                     callMgr.getLocalIp());
 
+            contactURI.setPort(callMgr.getUdpSipPort());
+            
             ContactHeader contactHeader = headerFactory
                     .createContactHeader(addressFactory
                             .createAddress(contactURI));
@@ -377,6 +382,14 @@ public class FlibbleSipProvider implements SipListener
         {
             return null;
         }
+    }
+    public SipProvider getSipProvider()
+    {
+        return sipProvider;
+    }
+    public void setSipProvider(SipProvider sipProvider)
+    {
+        this.sipProvider = sipProvider;
     }
     
 }

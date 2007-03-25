@@ -46,6 +46,20 @@ public class Signal
         return responseEvent;
     }
     
+    public boolean waitForSignal(long timeout)
+    {
+        boolean ret = false;
+        try
+        {
+            ret = block.tryAcquire(timeout, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+    
     public void notifyResponseEvent()
     {
         block.release();

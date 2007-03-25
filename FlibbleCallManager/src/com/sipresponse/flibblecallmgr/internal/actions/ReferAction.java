@@ -86,11 +86,12 @@ public class ReferAction extends ActionThread
         if (null != refer)
         {
             ClientTransaction ct = flibbleProvider.sendRequest(refer);
-            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            //ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
             // response should be 200 or 202..
-            if (responseEvent != null &&
-                responseEvent.getResponse() != null &&
-                (responseEvent.getResponse().getStatusCode() % 100) == 2)
+//            if (responseEvent != null &&
+//                responseEvent.getResponse() != null /*&&
+//                (responseEvent.getResponse().getStatusCode() % 100) == 2*/) 
+//                // dont care about repsonse code for blind transfers
             {
                 InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
                         EventCode.CALL_TRANSFER,
@@ -101,6 +102,7 @@ public class ReferAction extends ActionThread
                 ByeAction bye = new ByeAction(callMgr, call);
                 bye.run();
             }
+            /*
             else
             {
                 InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
@@ -110,6 +112,7 @@ public class ReferAction extends ActionThread
                         call.getHandle()));                
                 
             }
+            */
         }
     }
 }
