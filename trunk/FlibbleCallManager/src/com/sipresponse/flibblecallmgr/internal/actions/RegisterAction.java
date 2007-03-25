@@ -27,10 +27,6 @@ public class RegisterAction extends ActionThread
 {
     protected int timeout = 8000;
 
-    private CallManager callMgr;
-
-    private Line line;
-
     public RegisterAction(CallManager callMgr, Line line)
     {
         super(callMgr, null, line);

@@ -162,7 +162,7 @@ public class Call
                     ipToShare);
             localSdp.setOrigin(origin);
             // Session Name
-            SessionName sessionName = SdpFactory.getInstance().createSessionName("-");
+            SessionName sessionName = SdpFactory.getInstance().createSessionName("Flibble Session");
             localSdp.setSessionName(sessionName);
             // Connection
             Connection connection = SdpFactory.getInstance().createConnection(ipToShare);
@@ -180,18 +180,26 @@ public class Call
                             callMgr.getMediaPortStart(),
                             1,
                             "RTP/AVP",
-                            new int[] { 0 });            
+                            new int[] { 0, 101 });            
             
             Vector<AttributeField> attributes = new Vector<AttributeField>();
             AttributeField media = new AttributeField();
             media.setName("rtpmap");
             media.setValue("0" +
                            " " +
-                           "PMCU" + 
+                           "PCMU" + 
                            "/" + 
-                           "8000" +
-                           "/" + 
-                           "1");
+                           "8000");
+            attributes.add(media);
+            
+            media = new AttributeField();
+            media.setName("rtpmap");
+            media.setValue("101 telephone-event/8000" );
+            attributes.add(media);
+            
+            media = new AttributeField();
+            media.setName("fmtp");
+            media.setValue("101 0-15");
             attributes.add(media);
             
             mediaDescription.setAttributes(attributes);

@@ -55,12 +55,9 @@ import com.sipresponse.flibblecallmgr.internal.LineManager;
 public class PlaceCallAction extends ActionThread
 {
     private int timeout = 60000;
-    private CallManager callMgr;
-    private Call call;
     private MediaSourceType mediaSourceType;
     private String mediaFilename;
     private FlibbleSipProvider flibbleProvider;
-    private Line line;
     
     public PlaceCallAction(CallManager callMgr,
             Call call,
@@ -145,8 +142,13 @@ public class PlaceCallAction extends ActionThread
                     }
                     else if (statusCode >= 200 && statusCode < 400)
                     {
-                        // todo - fire a connected event
                         flibbleProvider.ackResponse(responseEvent);
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                                EventCode.CALL_CONNECTED,
+                                EventReason.CALL_NORMAL,
+                                line.getHandle(),
+                                call.getHandle()));
+                        break;
                     }
                     statusCode = responseEvent.getResponse().getStatusCode();
                 }
@@ -202,7 +204,8 @@ public class PlaceCallAction extends ActionThread
 
         try
         {
-            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(call.getSipUriString());
+            String toUriString = call.getSipUriString();
+            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(toUriString);
     
             // create >From Header
             SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);
@@ -219,6 +222,7 @@ public class PlaceCallAction extends ActionThread
             // create Contact Header
             SipURI contactUri = flibbleProvider.addressFactory.createSipURI(fromUser, callMgr.getLocalIp());
             Address contactAddress = flibbleProvider.addressFactory.createAddress(contactUri);
+            ((SipURI)contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
             ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
             
             // Create ViaHeaders
@@ -229,8 +233,7 @@ public class PlaceCallAction extends ActionThread
     
     
             // Create a new CallId header
-            CallIdHeader callIdHeader;
-            callIdHeader = sipProvider.getNewCallId();
+            CallIdHeader callIdHeader = flibbleProvider.headerFactory.createCallIdHeader(call.getCallId());
     
             // Create a new Cseq header
             CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader((long)1,Request.INVITE);

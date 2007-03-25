@@ -79,4 +79,12 @@ public class Event
     {
         this.lineHandle = lineHandle;
     }
+    
+    public String toString()
+    {
+        String desc = new String();
+        desc = "type = " + eventType + " code = " + eventCode + " reason = " +
+            eventReason + " line = " + lineHandle + " call = " + callHandle;
+        return desc; 
+    }
 }

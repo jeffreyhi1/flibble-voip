@@ -25,7 +25,7 @@ public abstract class Handler
         {
             try
             {
-                line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(call.getLineHandle());
+                this.line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(call.getLineHandle());
             }
             catch (Exception e)
             {
