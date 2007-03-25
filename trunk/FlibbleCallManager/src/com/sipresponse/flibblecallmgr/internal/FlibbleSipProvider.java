@@ -22,6 +22,7 @@ import gov.nist.javax.sip.Utils;
 
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.ClientTransaction;
@@ -84,7 +85,7 @@ public class FlibbleSipProvider implements SipListener
         sipFactory.setPathName("gov.nist");
 
         Properties properties = new Properties();
-        properties.setProperty("javax.sip.STACK_NAME", "FlibbleSipProvider");
+        properties.setProperty("javax.sip.STACK_NAME", "FlibbleSipProvider" + new Random().nextInt());
         properties.setProperty("gov.nist.javax.sip.MAX_MESSAGE_SIZE", "1048576");
         properties.setProperty("gov.nist.javax.sip.DEBUG_LOG","shootistAuthdebug.txt");
         properties.setProperty("gov.nist.javax.sip.SERVER_LOG","shootistAuthlog.txt");
