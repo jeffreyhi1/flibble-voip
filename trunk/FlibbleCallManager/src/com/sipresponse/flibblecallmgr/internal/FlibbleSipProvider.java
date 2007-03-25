@@ -235,9 +235,40 @@ public class FlibbleSipProvider implements SipListener
     }
 
 
-    public void processRequest(RequestEvent arg0)
+    public void processRequest(RequestEvent requestEvent)
     {
-        // TODO Auto-generated method stub
+        String method = requestEvent.getRequest().getMethod();
+        CallIdHeader callIdHeader = (CallIdHeader) requestEvent.getRequest().getHeader(CallIdHeader.NAME);
+        String callId = callIdHeader.getCallId();
+        Call call = InternalCallManager.getInstance().getCallById(callId);
+        if (method.equals(Request.INVITE))
+        {
+            if (null == call)
+            {
+                // create a new call and create 
+                // a new InviteHandler
+            }
+        }
+        if (call == null)
+        {
+            return;
+        }
+        
+        if (method.equals(Request.BYE))
+        {
+        }
+        else if (method.equals(Request.CANCEL))
+        {
+        }
+        else if (method.equals(Request.NOTIFY))
+        {
+        }
+        else if (method.equals(Request.OPTIONS))
+        {
+        }
+        else if (method.equals(Request.REFER))
+        {
+        }
     }
 
 

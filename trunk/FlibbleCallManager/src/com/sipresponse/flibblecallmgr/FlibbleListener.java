@@ -21,11 +21,9 @@ package com.sipresponse.flibblecallmgr;
 
 
 /**
- * Interface which defines a UserAgent listener entity. 
+ * Interface which defines a User-Agent listener entity. 
  * An object implementing this interface can be supplied to
- * the CallManager's initalize function.
- * The CallManager can be initialized without a
- * FlibbleListener.
+ * the CallManager's addListener function.
  * 
  * @author Mike Cohen
  */

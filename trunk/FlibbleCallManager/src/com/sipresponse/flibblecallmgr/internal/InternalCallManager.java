@@ -88,6 +88,7 @@ public class InternalCallManager
                     Call call = this.getCallByHandle(callHandle);
                     if (null != call)
                     {
+                        handleCallEvent(event);
                         call.setLastCallEvent(event);
                     }
                 }
@@ -151,6 +152,10 @@ public class InternalCallManager
         handleCounter++;
         return new Integer(handleCounter).toString();
     }
-    
+
+    private void handleCallEvent(Event event)
+    {
+        
+    }
 
 }
