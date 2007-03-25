@@ -18,7 +18,16 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.actions;
 
-public class ReinviteAction
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.Call;
+
+public class ReinviteAction extends ActionThread
 {
+
+    protected ReinviteAction(CallManager callMgr, Call call)
+    {
+        super(callMgr, call, null);
+        // TODO Auto-generated constructor stub
+    }
 
 }

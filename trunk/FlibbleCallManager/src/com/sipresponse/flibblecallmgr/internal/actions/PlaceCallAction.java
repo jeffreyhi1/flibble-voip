@@ -52,7 +52,7 @@ import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 
-public class PlaceCallAction extends Thread
+public class PlaceCallAction extends ActionThread
 {
     private int timeout = 60000;
     private CallManager callMgr;
@@ -60,14 +60,14 @@ public class PlaceCallAction extends Thread
     private MediaSourceType mediaSourceType;
     private String mediaFilename;
     private FlibbleSipProvider flibbleProvider;
+    private Line line;
     
     public PlaceCallAction(CallManager callMgr,
             Call call,
             MediaSourceType mediaSourceType,
             String mediaFilename)
     {
-        this.callMgr = callMgr;
-        this.call = call;
+        super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         flibbleProvider = InternalCallManager.getInstance()
@@ -106,7 +106,11 @@ public class PlaceCallAction extends Thread
                     if (statusCode >= 500)
                     {
                         EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
-                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, EventCode.CALL_FAILED, eventReason));
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, 
+                                                                                            EventCode.CALL_FAILED,
+                                                                                            eventReason,
+                                                                                            line.getHandle(),
+                                                                                            call.getHandle()));
                         break;
                     }
                     else if (statusCode == 401 || statusCode == 403)
@@ -124,7 +128,11 @@ public class PlaceCallAction extends Thread
                         {
                             eventReason = EventReason.CALL_FAILED_LOOP_DETECTED;
                         }
-                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, EventCode.CALL_FAILED, eventReason));
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                                                                                            EventCode.CALL_FAILED,
+                                                                                            eventReason,
+                                                                                            line.getHandle(),
+                                                                                            call.getHandle()));
                         
                         break;
                     }

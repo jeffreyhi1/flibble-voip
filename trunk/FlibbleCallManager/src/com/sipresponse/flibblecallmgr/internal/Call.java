@@ -35,6 +35,9 @@ import javax.sdp.Version;
 import javax.sip.Dialog;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventType;
 
 public class Call
 {
@@ -47,7 +50,34 @@ public class Call
     private SessionDescription localSdp;
     private SessionDescription remoteSdp;
     private Line line;
+    private Event lastCallEvent;
+    private boolean connected;
     
+    public Event getLastCallEvent()
+    {
+        return lastCallEvent;
+    }
+    public void setLastCallEvent(Event lastCallEvent)
+    {
+        this.lastCallEvent = lastCallEvent;
+        if (lastCallEvent.getEventType() == EventType.CALL &&
+            (lastCallEvent.getEventCode() ==  EventCode.CALL_CONNECTED ||
+             lastCallEvent.getEventCode() ==  EventCode.CALL_BIDIRECTIONAL_HOLD ||       
+             lastCallEvent.getEventCode() ==  EventCode.CALL_HELD_BY_REMOTE_PARTY ||       
+             lastCallEvent.getEventCode() ==  EventCode.CALL_HOLDING_REMOTE_PARTY)
+            )
+        {
+            connected = true;
+        }
+        else
+        {
+            connected = false;
+        }
+    }
+    public boolean isConnected()
+    {
+        return connected;
+    }
     public SessionDescription getLocalSdp()
     {
         return localSdp;

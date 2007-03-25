@@ -101,7 +101,7 @@ public class Line
         
         InternalCallManager.getInstance().fireEvent(
                 callMgr,
-                new Event(EventType.LINE, status, reason));        
+                new Event(EventType.LINE, status, reason, handle, null));        
     }
     public int getRegisterPeriod()
     {

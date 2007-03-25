@@ -26,34 +26,7 @@ public enum FlibbleResult
 {
     RESULT_SUCCESS,
     RESULT_INVALID_PARAMS,
+    RESULT_INVALID_STATE,
     RESULT_UNKNOWN_FAILURE
-    ;
-    
-    static String getDescription(FlibbleResult result)
-    {
-        String desc = null;
-        
-        // TODO - get these from an external file, 
-        //        for easier localization
-        switch (result)
-        {
-            case RESULT_SUCCESS:
-            {
-                desc = "OK";
-                break;
-            }
-            case RESULT_INVALID_PARAMS:
-            {
-                desc = "Invalid Parameters";
-                break;
-            }
-            case RESULT_UNKNOWN_FAILURE:
-            {
-                desc = "Unknown Failure";
-                break;
-            }
-        }
-        return desc;
-    }
     
 }

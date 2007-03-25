@@ -25,20 +25,25 @@ import javax.sip.SipException;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.Line;
 
-public class ByeAction extends Thread
+public class ByeAction extends ActionThread
 {
     private int timeout = 4000;
     private CallManager callMgr;
     private Call call;
+    private Line line;
     
     public ByeAction(CallManager callMgr, Call call)
     {
-        this.callMgr = callMgr;
-        this.call = call;
+        super(callMgr, call, null);
     }
     
     public int getTimeout()
@@ -70,6 +75,13 @@ public class ByeAction extends Thread
             ClientTransaction ct = flibbleProvider.sendRequest(bye);
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
             // response should be 200 ok...
+            
+            InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                    EventCode.CALL_DISCONNECTED,
+                    EventReason.CALL_NORMAL,
+                    line.getHandle(),
+                    call.getHandle()));
+            
         }
         
     }

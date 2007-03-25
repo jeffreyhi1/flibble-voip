@@ -18,7 +18,15 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.actions;
 
-public class CancelAction
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.Call;
+
+public class CancelAction extends ActionThread
 {
+
+    protected CancelAction(CallManager callMgr, Call call)
+    {
+        super(callMgr, call, null);
+    }
 
 }
