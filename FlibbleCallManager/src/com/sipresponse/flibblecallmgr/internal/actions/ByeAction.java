@@ -78,7 +78,7 @@ public class ByeAction extends ActionThread
             
             InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
                     EventCode.CALL_DISCONNECTED,
-                    EventReason.CALL_NORMAL,
+                    EventReason.CALL_DISCONNECT_LOCAL,
                     line.getHandle(),
                     call.getHandle()));
             

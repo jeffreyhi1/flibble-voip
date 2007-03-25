@@ -49,7 +49,7 @@ public class Call
     private SessionDescription remoteSdp;
     private Line line;
     private Event lastCallEvent;
-    private boolean connected;
+    private boolean connected = false;
     
     public Event getLastCallEvent()
     {
@@ -59,15 +59,12 @@ public class Call
     {
         this.lastCallEvent = lastCallEvent;
         if (lastCallEvent.getEventType() == EventType.CALL &&
-            (lastCallEvent.getEventCode() ==  EventCode.CALL_CONNECTED ||
-             lastCallEvent.getEventCode() ==  EventCode.CALL_BIDIRECTIONAL_HOLD ||       
-             lastCallEvent.getEventCode() ==  EventCode.CALL_HELD_BY_REMOTE_PARTY ||       
-             lastCallEvent.getEventCode() ==  EventCode.CALL_HOLDING_REMOTE_PARTY)
-            )
+            lastCallEvent.getEventCode() ==  EventCode.CALL_CONNECTED)
         {
             connected = true;
         }
-        else
+        else if (lastCallEvent.getEventType() == EventType.CALL &&
+                lastCallEvent.getEventCode() ==  EventCode.CALL_DISCONNECTED)
         {
             connected = false;
         }
@@ -97,6 +94,7 @@ public class Call
             String sipUriString,
             String callId)
     {
+        this.callMgr = callMgr; 
         this.lineHandle = lineHandle;
         this.sipUriString = sipUriString;
         this.callId = callId;
@@ -206,5 +204,9 @@ public class Call
             e.printStackTrace();
         }
         
+    }
+    public CallManager getCallMgr()
+    {
+        return callMgr;
     }
 }

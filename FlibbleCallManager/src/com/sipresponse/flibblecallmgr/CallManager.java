@@ -35,7 +35,7 @@ import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
- * Provides a simple to use interface for controlling voip calls.
+ * Provides a simple to use interface for controlling SIP based calls.
  * 
  * @author Mike Cohen
  * 
