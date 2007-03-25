@@ -30,6 +30,7 @@ import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
+import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 /**
@@ -192,7 +193,37 @@ public class CallManager
     }
 
     /**
-     * Registers a object to receive Flibble Events.
+     * Transfers a currently connected call by sending a REFER message to the remote party.
+     * @param callHandle Handle of the call to transfer.
+     * @paream targetUri URI of the transfer target.
+     * @return A result indicating the validity of the parameters.  Actual
+     * results of the transfer will come in the form of an event See FlibbleListener.onEvent. 
+     */
+    public FlibbleResult blindTransfer(String callHandle, String targetUri)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
+        
+        if (null != call && call.isConnected() == false)
+        {
+            result = FlibbleResult.RESULT_INVALID_STATE;
+            return result;
+        }
+        if (null != call)
+        {
+            ReferAction refer = new ReferAction(this,
+                                                call,
+                                                targetUri,
+                                                ReferAction.ReferActionType.BLIND);
+            refer.start();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;
+    }
+    
+    /**
+     * Sets an object to receive Flibble Events.
      * 
      * @param listener
      *            Listener to add.
@@ -287,12 +318,11 @@ public class CallManager
             }
             else
             {
-
             }
 
             try
             {
-                Thread.currentThread().sleep(200);
+                Thread.sleep(200);
             }
             catch (InterruptedException ie)
             {

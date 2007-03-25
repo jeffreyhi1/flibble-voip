@@ -1,20 +1,13 @@
 package com.sipresponse.flibblecallmgr.internal.actions;
 
-import java.text.ParseException;
 
 import gov.nist.javax.sip.Utils;
-import gov.nist.javax.sip.header.ProxyAuthenticate;
-import gov.nist.javax.sip.header.SIPHeaderNames;
-
 import javax.sip.ClientTransaction;
 import javax.sip.InvalidArgumentException;
 import javax.sip.ObjectInUseException;
 import javax.sip.ResponseEvent;
-import javax.sip.SipProvider;
-import javax.sip.address.URI;
 import javax.sip.header.AuthorizationHeader;
 import javax.sip.header.CSeqHeader;
-import javax.sip.header.CallIdHeader;
 import javax.sip.header.ExpiresHeader;
 import javax.sip.header.ProxyAuthenticateHeader;
 import javax.sip.header.ProxyAuthorizationHeader;
@@ -23,21 +16,16 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
-import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventReason;
-import com.sipresponse.flibblecallmgr.EventType;
-import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
-import com.sipresponse.flibblecallmgr.internal.LineManager;
-import com.sipresponse.flibblecallmgr.internal.util.DigestClientAuthenticationMethod;
 import com.sipresponse.flibblecallmgr.internal.util.MessageDigestAlgorithm;
 
-public class RegisterAction extends Thread
+public class RegisterAction extends ActionThread
 {
-    private int timeout = 8000;
+    protected int timeout = 8000;
 
     private CallManager callMgr;
 
@@ -45,8 +33,7 @@ public class RegisterAction extends Thread
 
     public RegisterAction(CallManager callMgr, Line line)
     {
-        this.callMgr = callMgr;
-        this.line = line;
+        super(callMgr, null, line);
     }
 
     public void run()

@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
 
 public class InternalCallManager
@@ -79,6 +80,18 @@ public class InternalCallManager
     {
         synchronized (vectorSync)
         {
+            if (event.getEventType() == EventType.CALL)
+            {
+                String callHandle = event.getCallHandle();
+                if (null != callHandle)
+                {
+                    Call call = this.getCallByHandle(callHandle);
+                    if (null != call)
+                    {
+                        call.setLastCallEvent(event);
+                    }
+                }
+            }
             Vector<FlibbleListener> listeners = flibbleListenerVectors.get(callManager);
             for (FlibbleListener listener : listeners)
             {

@@ -29,7 +29,6 @@ public class Signal
     private ResponseEvent responseEvent;
     public Signal()
     {
-        super();
         block = new Semaphore(1, true);
         try
         {

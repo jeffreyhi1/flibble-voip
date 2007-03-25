@@ -18,19 +18,26 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
+
 public class Event
 {
     private EventType eventType;
     private EventCode eventCode;
     private EventReason eventReason;
+    private String lineHandle;
+    private String callHandle;
     
     public Event(EventType eventType,
                  EventCode eventCode,
-                 EventReason eventReason)
+                 EventReason eventReason,
+                 String lineHandle,
+                 String callHandle)
     {
         this.eventType = eventType;
         this.eventCode = eventCode;
         this.eventReason = eventReason;
+        this.lineHandle = lineHandle;
+        this.callHandle = callHandle;
     }
     public EventType getEventType()
     {
@@ -55,5 +62,21 @@ public class Event
     public void setEventReason(EventReason eventReason)
     {
         this.eventReason = eventReason;
+    }
+    public String getCallHandle()
+    {
+        return callHandle;
+    }
+    public void setCallHandle(String callHandle)
+    {
+        this.callHandle = callHandle;
+    }
+    public String getLineHandle()
+    {
+        return lineHandle;
+    }
+    public void setLineHandle(String lineHandle)
+    {
+        this.lineHandle = lineHandle;
     }
 }
