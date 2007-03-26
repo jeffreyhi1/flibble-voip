@@ -40,6 +40,7 @@ import javax.sip.SipListener;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
 import javax.sip.TimeoutEvent;
+import javax.sip.TransactionDoesNotExistException;
 import javax.sip.TransactionTerminatedEvent;
 import javax.sip.TransactionUnavailableException;
 import javax.sip.address.Address;
@@ -151,6 +152,35 @@ public class FlibbleSipProvider implements SipListener
             }
         }
         return responseEvent;
+    }
+    
+    public ClientTransaction sendDialogRequest(Dialog dialog, Request request)
+    {
+        ClientTransaction ct = null;
+        try
+        {
+            ct = getSipProvider().getNewClientTransaction(request);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        
+        if (null != ct)
+        {
+            Signal signal = new Signal();
+            signals.put(ct, signal);
+        }
+        try
+        {
+            dialog.sendRequest(ct);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return ct;
+        
     }
     public ClientTransaction sendRequest(Request request)
     {

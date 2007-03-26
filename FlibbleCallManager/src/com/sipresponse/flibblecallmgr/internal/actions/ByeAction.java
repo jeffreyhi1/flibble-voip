@@ -35,6 +35,7 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 public class ByeAction extends ActionThread
 {
@@ -74,8 +75,7 @@ public class ByeAction extends ActionThread
             ClientTransaction ct = null;
             try
             {
-                ct = flibbleProvider.getSipProvider().getNewClientTransaction(bye);
-                dialog.sendRequest(ct);
+                ct = flibbleProvider.sendDialogRequest(dialog, bye);
             }
             catch (Exception e)
             {

@@ -90,12 +90,10 @@ public class ReferAction extends ActionThread
             ClientTransaction ct = null;
             try
             {
-                ct = flibbleProvider.getSipProvider().getNewClientTransaction(refer);
-                dialog.sendRequest(ct);
+                ct = flibbleProvider.sendDialogRequest(dialog, refer);
             }
             catch (Exception e)
             {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
@@ -112,9 +110,12 @@ public class ReferAction extends ActionThread
                         EventReason.CALL_TRANSFER_AS_CONTROLLER,
                         line.getHandle(),
                         call.getHandle()));                
+                
+                // maybe we should wait for a NOTIFY with Sipfrag content here?
+                
                 // we should now send a BYE to the Transferee
                 ByeAction bye = new ByeAction(callMgr, call);
-                bye.run();
+                bye.start();
             }
             /*
             else

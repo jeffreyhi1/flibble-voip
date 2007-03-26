@@ -113,6 +113,13 @@ public class CallManagerTest implements FlibbleListener
                 EventReason.CALL_TRANSFER_AS_CONTROLLER,
                 15000);
          assertTrue(ret);
+         
+         ret = waitForCallEvent(callHandle, 
+                 EventCode.CALL_DISCONNECTED,
+                 EventReason.CALL_DISCONNECT_LOCAL,
+                 15000);
+          assertTrue(ret);
+         
     }
     
     private void initializeCallManagers()
@@ -166,13 +173,13 @@ public class CallManagerTest implements FlibbleListener
     {
         if (lineHandle1 == null)
         {
-            lineHandle1 = callMgr1.addLine("sip:foo@127.0.0.1:5080", "Display Name", false, -1, null);
+            lineHandle1 = callMgr1.addLine("sip:foo@" + localIp + ":5080", "Display Name", false, -1, null);
             assertTrue(lineHandle1 != null);
         }
 
         if (lineHandle2 == null)
         {
-            lineHandle2 = callMgr2.addLine("sip:bar@127.0.0.1:5090", "Other Name", false, -1, null);
+            lineHandle2 = callMgr2.addLine("sip:bar@" + localIp + ":5090", "Other Name", false, -1, null);
             assertTrue(lineHandle2 != null);
         }
     }
