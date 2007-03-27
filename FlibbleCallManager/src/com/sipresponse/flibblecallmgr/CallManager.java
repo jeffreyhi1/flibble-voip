@@ -195,7 +195,7 @@ public class CallManager
     /**
      * Transfers a currently connected call by sending a REFER message to the remote party.
      * @param callHandle Handle of the call to transfer.
-     * @paream targetUri URI of the transfer target.
+     * @param targetUri URI of the transfer target.
      * @return A result indicating the validity of the parameters.  Actual
      * results of the transfer will come in the form of an event See FlibbleListener.onEvent. 
      */
