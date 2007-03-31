@@ -86,5 +86,11 @@ public class LineManager
     {
         return linesVector;
     }
+    
+    public void stopRegistration()
+    {
+        regMgr.shutdown();
+        regMgr.interrupt();
+    }
 
 }

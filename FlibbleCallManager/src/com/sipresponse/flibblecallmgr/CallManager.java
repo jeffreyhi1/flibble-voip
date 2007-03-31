@@ -65,12 +65,12 @@ public class CallManager
     {
     }
 
-    public void initialize() throws IOException
+    public void initialize() throws IOException, IllegalArgumentException
     {
         initialize(System.getProperty("user.home") + "/" + "flibble.properties");
     }
     
-    public void initialize(String filename) throws IOException
+    public void initialize(String filename) throws IOException, IllegalArgumentException
     {
         Properties props = new Properties();
         try
@@ -131,6 +131,7 @@ public class CallManager
                 useSoundCard
                 );
     }
+    
     /**
      * Initializes the CallManager. The object must not be used before
      * initialization (with the exception of addListener).
@@ -327,6 +328,10 @@ public class CallManager
         InternalCallManager.getInstance().removeListener(this, listener);
     }
 
+    public void removeAllListeners()
+    {
+        InternalCallManager.getInstance().removeAllListeners(this);
+    }
     public boolean isEnableStun()
     {
         return enableStun;
@@ -373,6 +378,8 @@ public class CallManager
      */
     public void destroyCallManager()
     {
+        removeAllListeners();
+        InternalCallManager.getInstance().getLineManager(this).stopRegistration();
         SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
                 .getSipStack();
 
@@ -389,7 +396,6 @@ public class CallManager
                     try
                     {
                         sipStack.deleteListeningPoint(lp);
-//                        listeningPoints.remove();
                         lp = null;
                     }
                     catch (ObjectInUseException oiue)
@@ -440,6 +446,7 @@ public class CallManager
         {
             e.printStackTrace();
         }
+        System.err.println("CallManager destroyed.");
     }
 
 }
