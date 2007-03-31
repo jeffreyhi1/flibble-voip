@@ -97,20 +97,20 @@ public class CallManager
         }
         if (null != props.getProperty("mediaPortStart"))
         {
-            udpSipPort = new Integer(props.getProperty("mediaPortStart")).intValue();
+            mediaPortStart = new Integer(props.getProperty("mediaPortStart")).intValue();
         }
         if (null != props.getProperty("mediaPortEnd"))
         {
-            udpSipPort = new Integer(props.getProperty("mediaPortEnd")).intValue();
+            mediaPortEnd = new Integer(props.getProperty("mediaPortEnd")).intValue();
         }
         proxyAddress = props.getProperty("proxyAddress");
         if (null != props.getProperty("proxyPort"))
         {
-            udpSipPort = new Integer(props.getProperty("proxyPort")).intValue();
+            proxyPort = new Integer(props.getProperty("proxyPort")).intValue();
         }
         if (null != props.getProperty("enableStun"))
         {
-            useSoundCard = Boolean.parseBoolean(props.getProperty("enableStun"));
+            enableStun = Boolean.parseBoolean(props.getProperty("enableStun"));
         }
         stunServer = props.getProperty("stunServer");
         if (null != props.getProperty("useSoundCard"))
