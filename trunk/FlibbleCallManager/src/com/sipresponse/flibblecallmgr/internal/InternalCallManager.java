@@ -44,6 +44,7 @@ public class InternalCallManager
     private ConcurrentHashMap<String, Call> callIdMap = 
         new ConcurrentHashMap<String, Call>();
     private int handleCounter = 0;
+    private String mediaPluginClass;
     
     private static InternalCallManager instance;
     public synchronized static InternalCallManager getInstance()
@@ -180,6 +181,16 @@ public class InternalCallManager
     private void handleCallEvent(Event event)
     {
         
+    }
+
+    public String getMediaPluginClass()
+    {
+        return mediaPluginClass;
+    }
+
+    public void setMediaPluginClass(String mediaPluginClass)
+    {
+        this.mediaPluginClass = mediaPluginClass;
     }
 
 }

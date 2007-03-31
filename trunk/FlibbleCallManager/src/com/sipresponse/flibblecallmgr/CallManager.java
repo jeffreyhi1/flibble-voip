@@ -55,7 +55,6 @@ public class CallManager
     boolean enableStun;
     private String stunServer;
     private boolean useSoundCard;
-    private FlibbleMediaProvider mediaProvider;
 
     /**
      * Constructor.
@@ -199,6 +198,7 @@ public class CallManager
                 new LineManager(this));
         InternalCallManager.getInstance().setMediaSocketManager(this,
                 new MediaSocketManager(this, mediaPortStart, mediaPortEnd));
+        InternalCallManager.getInstance().setMediaPluginClass(mediaPluginClass);
     }
     
     /**
