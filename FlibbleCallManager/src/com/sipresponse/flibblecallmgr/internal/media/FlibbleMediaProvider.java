@@ -25,11 +25,27 @@ package com.sipresponse.flibblecallmgr.internal.media;
  */
 public abstract class FlibbleMediaProvider
 {
-    public abstract void setUseMicrophone(boolean useMic);
-    public abstract void setAudioRender(boolean render);
-    public abstract void setMediaStreamSource(String mediaUrl);
-    public abstract void startRtpReceive(int port);
-    public abstract void stopRtpReceive(int port);
+    protected boolean useMic;
+    protected boolean audioRender;
+    protected String mediaUrl;
+    
+    public void setUseMicrophone(boolean useMic)
+    {
+        this.useMic = useMic;
+    }
+    public void setAudioRender(boolean render)
+    {
+        this.audioRender = render;
+    }
+    public void setMediaStreamSource(String mediaUrl)
+    {
+        this.mediaUrl = mediaUrl;
+    }
+    
+    public abstract void initializeRtpReceive(String address, int port);
+    public abstract void startRtpReceive(String address, int port);
+    public abstract void stopRtpReceive(String address, int port);
+    public abstract void initializeRtpSend(String destIp, int destPort);
     public abstract void startRtpSend(String destIp, int destPort);
     public abstract void stopRtpSend(String destIp, int destPort);
 }
