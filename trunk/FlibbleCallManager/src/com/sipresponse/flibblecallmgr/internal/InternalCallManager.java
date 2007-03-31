@@ -139,6 +139,16 @@ public class InternalCallManager
             listeners.remove(listener);
         }
     }    
+
+    public void removeAllListeners(CallManager callManager)
+    {
+        // try to get the vector
+        Vector<FlibbleListener> listeners = flibbleListenerVectors.get(callManager);
+        while (listeners.size() > 0)
+        {
+            listeners.remove(0);
+        }
+    }    
     
     public void addCall(String handle, Call call)
     {

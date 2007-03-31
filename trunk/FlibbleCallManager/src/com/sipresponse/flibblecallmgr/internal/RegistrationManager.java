@@ -30,7 +30,6 @@ public class RegistrationManager extends Thread
             }
             catch (InterruptedException e)
             {
-                e.printStackTrace();
                 return;
             }
             LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
