@@ -25,6 +25,7 @@ import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
+import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
 public class InternalCallManager
 {
@@ -35,6 +36,8 @@ public class InternalCallManager
         new ConcurrentHashMap<CallManager, FlibbleSipProvider>();
     private ConcurrentHashMap<CallManager, LineManager> lineManagers = 
         new ConcurrentHashMap<CallManager, LineManager>();
+    private ConcurrentHashMap<CallManager, MediaSocketManager> mediaSocketManagers = 
+        new ConcurrentHashMap<CallManager, MediaSocketManager>();
     
     private ConcurrentHashMap<String, Call> handleMap = 
         new ConcurrentHashMap<String, Call>();
@@ -74,6 +77,17 @@ public class InternalCallManager
     public void setLineManager(CallManager callManager, LineManager lineManager)
     {
         lineManagers.put(callManager, lineManager);
+    }
+    
+    public MediaSocketManager getMediaSocketManager(CallManager callManager)
+    {
+        return mediaSocketManagers.get(callManager);
+    }
+
+    public void setMediaSocketManager(CallManager callManager,
+            MediaSocketManager mediaSocketManager)
+    {
+        mediaSocketManagers.put(callManager, mediaSocketManager);
     }
     
     public void fireEvent(CallManager callManager, Event event)

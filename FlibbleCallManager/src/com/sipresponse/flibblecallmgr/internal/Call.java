@@ -19,9 +19,7 @@
 package com.sipresponse.flibblecallmgr.internal;
 
 import gov.nist.javax.sdp.fields.AttributeField;
-
 import java.util.Vector;
-
 import javax.sdp.Connection;
 import javax.sdp.MediaDescription;
 import javax.sdp.Origin;
@@ -31,7 +29,6 @@ import javax.sdp.SessionName;
 import javax.sdp.Time;
 import javax.sdp.Version;
 import javax.sip.Dialog;
-
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
