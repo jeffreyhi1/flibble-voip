@@ -18,7 +18,10 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.Properties;
 
 import javax.sip.ListeningPoint;
 import javax.sip.ObjectInUseException;
@@ -61,6 +64,72 @@ public class CallManager
     {
     }
 
+    public void initialize() throws IOException
+    {
+        initialize(System.getProperty("user.home") + "/" + "flibble.properties");
+    }
+    
+    public void initialize(String filename) throws IOException
+    {
+        Properties props = new Properties();
+        try
+        {
+            props.load(new FileInputStream(filename));
+        }
+        catch (IOException e)
+        {
+            throw e;
+        }
+        String localIp = null;
+        int udpSipPort = -1;
+        int mediaPortStart = 9000;
+        int mediaPortEnd = 9020;
+        String proxyAddress = null;
+        int proxyPort = -1;
+        boolean enableStun = false;
+        String stunServer = null;
+        boolean useSoundCard = false;        
+        
+        localIp = props.getProperty("localIp");
+        if (null != props.getProperty("udpSipPort"))
+        {
+            udpSipPort = new Integer(props.getProperty("udpSipPort")).intValue();
+        }
+        if (null != props.getProperty("mediaPortStart"))
+        {
+            udpSipPort = new Integer(props.getProperty("mediaPortStart")).intValue();
+        }
+        if (null != props.getProperty("mediaPortEnd"))
+        {
+            udpSipPort = new Integer(props.getProperty("mediaPortEnd")).intValue();
+        }
+        proxyAddress = props.getProperty("proxyAddress");
+        if (null != props.getProperty("proxyPort"))
+        {
+            udpSipPort = new Integer(props.getProperty("proxyPort")).intValue();
+        }
+        if (null != props.getProperty("enableStun"))
+        {
+            useSoundCard = Boolean.parseBoolean(props.getProperty("enableStun"));
+        }
+        stunServer = props.getProperty("stunServer");
+        if (null != props.getProperty("useSoundCard"))
+        {
+            useSoundCard = Boolean.parseBoolean(props.getProperty("useSoundCard"));
+        }
+        
+        initialize(
+                localIp,
+                udpSipPort,
+                mediaPortStart,
+                mediaPortEnd,
+                proxyAddress,
+                proxyPort,
+                enableStun,
+                stunServer,
+                useSoundCard
+                );
+    }
     /**
      * Initializes the CallManager. The object must not be used before
      * initialization (with the exception of addListener).
