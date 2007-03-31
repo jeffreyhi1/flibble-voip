@@ -35,6 +35,7 @@ import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
@@ -156,7 +157,7 @@ public class CallManager
             int proxyPort,
             boolean enableStun,
             String stunServer,
-            boolean useSoundCard)
+            boolean useSoundCard) throws IllegalArgumentException
     {
         this.localIp = localIp;
         this.udpSipPort = udpSipPort;
@@ -167,11 +168,24 @@ public class CallManager
         this.enableStun = enableStun;
         this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
+        if (mediaPortStart % 2 != 0 ||
+            mediaPortEnd   % 2 != 0)
+        {
+            throw new IllegalArgumentException(
+                    "Media end and start ports must be even numbers.");
+        }
+        if (mediaPortStart > mediaPortEnd)
+        {
+            throw new IllegalArgumentException(
+                    "Media end port must be greater than start port.");
+        }
         InternalCallManager.getInstance().setProvider(this,
                 new FlibbleSipProvider(this));
         InternalCallManager.getInstance().getProvider(this).initialize();
         InternalCallManager.getInstance().setLineManager(this,
                 new LineManager(this));
+        InternalCallManager.getInstance().setMediaSocketManager(this,
+                new MediaSocketManager(this, mediaPortStart, mediaPortEnd));
     }
     
     /**
