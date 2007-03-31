@@ -89,7 +89,8 @@ public class CallManager
         int proxyPort = -1;
         boolean enableStun = false;
         String stunServer = null;
-        boolean useSoundCard = false;        
+        boolean useSoundCard = false;
+        String mediaPluginClass = null;
         
         localIp = props.getProperty("localIp");
         if (null != props.getProperty("udpSipPort"))
@@ -118,6 +119,7 @@ public class CallManager
         {
             useSoundCard = Boolean.parseBoolean(props.getProperty("useSoundCard"));
         }
+        mediaPluginClass = props.getProperty("mediaPluginClass");
         
         initialize(
                 localIp,
@@ -128,7 +130,8 @@ public class CallManager
                 proxyPort,
                 enableStun,
                 stunServer,
-                useSoundCard
+                useSoundCard,
+                mediaPluginClass
                 );
     }
     
@@ -158,7 +161,8 @@ public class CallManager
             int proxyPort,
             boolean enableStun,
             String stunServer,
-            boolean useSoundCard) throws IllegalArgumentException
+            boolean useSoundCard,
+            String mediaPluginClass) throws IllegalArgumentException
     {
         this.localIp = localIp;
         this.udpSipPort = udpSipPort;
@@ -169,6 +173,14 @@ public class CallManager
         this.enableStun = enableStun;
         this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
+        
+        // if the application needs to use a sound card, and no
+        // plugin class is given, use JMF
+        if (true == useSoundCard)
+        {
+            mediaPluginClass = "com.sipresponse.flibblecallmgr.plugin.jmf.JmfPlugin";
+        }
+        
         if (mediaPortStart % 2 != 0 ||
             mediaPortEnd   % 2 != 0)
         {
