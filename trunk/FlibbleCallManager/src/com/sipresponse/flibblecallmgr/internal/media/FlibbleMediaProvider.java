@@ -19,6 +19,8 @@
 
 package com.sipresponse.flibblecallmgr.internal.media;
 
+import com.sipresponse.flibblecallmgr.CallManager;
+
 /**
  * Abstract class defining the media control interface. 
  * @author Mike Cohen
@@ -42,10 +44,16 @@ public abstract class FlibbleMediaProvider
         this.mediaUrl = mediaUrl;
     }
     
-    public abstract void initializeRtpReceive(String address, int port);
+    public abstract void initializeRtpReceive(CallManager callMgr,
+                                              String callHandle,
+                                              String address,
+                                              int port);
     public abstract void startRtpReceive(String address, int port);
     public abstract void stopRtpReceive(String address, int port);
-    public abstract void initializeRtpSend(String destIp, int destPort);
+    public abstract void initializeRtpSend(CallManager callMgr,
+                                           String callHandle,
+                                           String destIp,
+                                           int destPort);
     public abstract void startRtpSend(String destIp, int destPort);
     public abstract void stopRtpSend(String destIp, int destPort);
 }
