@@ -18,7 +18,42 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
-public class Receiver
+import javax.media.ControllerEvent;
+import javax.media.ControllerListener;
+import javax.media.rtp.RTPManager;
+import javax.media.rtp.ReceiveStreamListener;
+import javax.media.rtp.SessionListener;
+import javax.media.rtp.event.ReceiveStreamEvent;
+import javax.media.rtp.event.SessionEvent;
+
+import com.sipresponse.flibblecallmgr.CallManager;
+
+public class Receiver implements ReceiveStreamListener, SessionListener, 
+    ControllerListener
 {
+    private RTPManager rtpMgr;
+    public Receiver(CallManager callMgr, String address, int port)
+    {
+        rtpMgr = RTPManager.newInstance();
+        rtpMgr.addSessionListener(this);
+        rtpMgr.addReceiveStreamListener(this);
+
+        // Initialize the RTPManager with the RTPSocketAdapter
+        rtpMgr.initialize(new ReceiveAdapter(
+                    callMgr,
+                    address, 
+                    port));        
+    }
+    public void update(ReceiveStreamEvent arg0)
+    {
+    }
+
+    public void update(SessionEvent arg0)
+    {
+    }
+
+    public void controllerUpdate(ControllerEvent arg0)
+    {
+    }
 
 }
