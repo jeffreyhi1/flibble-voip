@@ -18,7 +18,23 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
+import com.sipresponse.flibblecallmgr.CallManager;
+
 public class Transmitter
 {
-
+    private CallManager callMgr;
+    private String callHandle;
+    private String destIp;
+    private int destPort;
+    
+    public Transmitter(CallManager callMgr,
+            String callHandle,
+            String destIp,
+            int destPort)
+    {
+        this.callMgr = callMgr;
+        this.callHandle = callHandle;
+        this.destIp = destIp;
+        this.destPort = destPort;
+    }
 }

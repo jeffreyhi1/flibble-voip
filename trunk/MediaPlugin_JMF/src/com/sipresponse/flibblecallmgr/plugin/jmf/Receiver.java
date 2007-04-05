@@ -32,11 +32,13 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
     ControllerListener
 {
     private RTPManager rtpMgr;
-    public Receiver(CallManager callMgr, String address, int port)
+    private String callHandle;
+    public Receiver(CallManager callMgr, String callHandle, String address, int port)
     {
         rtpMgr = RTPManager.newInstance();
         rtpMgr.addSessionListener(this);
         rtpMgr.addReceiveStreamListener(this);
+        this.callHandle = callHandle;
 
         // Initialize the RTPManager with the RTPSocketAdapter
         rtpMgr.initialize(new ReceiveAdapter(
