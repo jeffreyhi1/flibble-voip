@@ -32,7 +32,7 @@ public class JmfPlugin extends FlibbleMediaProvider
                                      String address,
                                      int port)
     {
-        receiver = new Receiver(callMgr, address, port);
+        receiver = new Receiver(callMgr, callHandle, address, port);
     }
 
     @Override
@@ -50,6 +50,10 @@ public class JmfPlugin extends FlibbleMediaProvider
                                   String callHandle,
                                   String destIp, int destPort)
     {
+        transmitter = new Transmitter(callMgr,
+                                      callHandle,
+                                      destIp,
+                                      destPort);
     }
     
     @Override
