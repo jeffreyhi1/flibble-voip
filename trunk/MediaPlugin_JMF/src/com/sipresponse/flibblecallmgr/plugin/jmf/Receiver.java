@@ -18,14 +18,26 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
+import javax.media.ControllerErrorEvent;
 import javax.media.ControllerEvent;
 import javax.media.ControllerListener;
+import javax.media.Player;
+import javax.media.RealizeCompleteEvent;
+import javax.media.control.BufferControl;
+import javax.media.rtp.Participant;
+import javax.media.rtp.RTPControl;
 import javax.media.rtp.RTPManager;
+import javax.media.rtp.ReceiveStream;
 import javax.media.rtp.ReceiveStreamListener;
 import javax.media.rtp.SessionListener;
+import javax.media.rtp.event.ByeEvent;
+import javax.media.rtp.event.NewParticipantEvent;
+import javax.media.rtp.event.NewReceiveStreamEvent;
 import javax.media.rtp.event.ReceiveStreamEvent;
+import javax.media.rtp.event.RemotePayloadChangeEvent;
 import javax.media.rtp.event.SessionEvent;
-
+import javax.media.rtp.event.StreamMappedEvent;
+import javax.media.protocol.DataSource;
 import com.sipresponse.flibblecallmgr.CallManager;
 
 public class Receiver implements ReceiveStreamListener, SessionListener, 
@@ -33,6 +45,9 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
 {
     private RTPManager rtpMgr;
     private String callHandle;
+    private Object dataSync = new Object();
+    private boolean dataReceived = false;
+    
     public Receiver(CallManager callMgr, String callHandle, String address, int port)
     {
         rtpMgr = RTPManager.newInstance();
@@ -44,18 +59,139 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
         rtpMgr.initialize(new ReceiveAdapter(
                     callMgr,
                     address, 
-                    port));        
+                    port));
+        
+        BufferControl bc = (BufferControl)rtpMgr.getControl("javax.media.control.BufferControl");
+        if (bc != null)
+        {
+            bc.setBufferLength(20);
+        }
     }
-    public void update(ReceiveStreamEvent arg0)
+    
+    /**
+     * SessionListener.
+     */
+    public synchronized void update(SessionEvent evt)
     {
+        if (evt instanceof NewParticipantEvent)
+        {
+            Participant p = ((NewParticipantEvent)evt).getParticipant();
+            System.err.println("  - A new participant had just joined: " + p.getCNAME());
+        }
     }
 
-    public void update(SessionEvent arg0)
+
+    /**
+     * ReceiveStreamListener
+     */
+    public synchronized void update( ReceiveStreamEvent evt)
     {
+
+        RTPManager mgr = (RTPManager)evt.getSource();
+        Participant participant = evt.getParticipant(); // could be null.
+        ReceiveStream stream = evt.getReceiveStream();  // could be null.
+
+        if (evt instanceof RemotePayloadChangeEvent)
+        {
+            System.err.println("  - Received an RTP PayloadChangeEvent.");
+        }
+        else if (evt instanceof NewReceiveStreamEvent)
+        {
+            try
+            {
+                stream = ((NewReceiveStreamEvent)evt).getReceiveStream();
+                DataSource ds = stream.getDataSource();
+        
+                // Find out the formats.
+                RTPControl ctl = (RTPControl)ds.getControl("javax.media.rtp.RTPControl");
+                if (ctl != null)
+                {
+                    System.err.println("  - Recevied new RTP stream: " + ctl.getFormat());
+                }
+                else
+                {
+                    System.err.println("  - Recevied new RTP stream");
+                }
+                if (participant == null)
+                {
+                    System.err.println("      The sender of this stream had yet to be identified.");
+                }
+                else
+                {
+                    System.err.println("      The stream comes from: " + participant.getCNAME()); 
+                }
+        
+                // create a player by passing datasource to the Media Manager
+                Player p = javax.media.Manager.createPlayer(ds);
+                if (p == null)
+                    return;
+        
+                p.addControllerListener(this);
+                p.realize();
+        
+                // Notify intialize() that a new stream had arrived.
+                synchronized (dataSync)
+                {
+                    dataReceived = true;
+                    dataSync.notifyAll();
+                }
+        
+            }
+            catch (Exception e)
+            {
+                System.err.println("NewReceiveStreamEvent exception " + e.getMessage());
+                return;
+            }
+        }
+        else if (evt instanceof StreamMappedEvent)
+        {
+
+            if (stream != null && stream.getDataSource() != null)
+            {
+                DataSource ds = stream.getDataSource();
+                // Find out the formats.
+                RTPControl ctl = (RTPControl) ds
+                        .getControl("javax.media.rtp.RTPControl");
+                System.err.println("  - The previously unidentified stream ");
+                if (ctl != null)
+                    System.err.println("      " + ctl.getFormat());
+                System.err.println("      had now been identified as sent by: "
+                        + participant.getCNAME());
+            }
+        }
+        else if (evt instanceof ByeEvent)
+        {
+
+            System.err.println("  - Got \"bye\" from: "
+                    + participant.getCNAME());
+        }
+
     }
 
-    public void controllerUpdate(ControllerEvent arg0)
-    {
-    }
 
+    /**
+     * ControllerListener for the Players.
+     */
+    public synchronized void controllerUpdate(ControllerEvent ce)
+    {
+
+        Player p = (Player) ce.getSourceController();
+
+        if (p == null)
+            return;
+
+        // Get this when the internal players are realized.
+        if (ce instanceof RealizeCompleteEvent)
+        {
+            p.start();
+        }
+
+        if (ce instanceof ControllerErrorEvent)
+        {
+            p.removeControllerListener(this);
+            System.err.println("AVReceive3 internal error: " + ce);
+        }
+
+    }
 }
+
