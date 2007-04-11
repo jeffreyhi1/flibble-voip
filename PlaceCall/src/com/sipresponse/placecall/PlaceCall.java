@@ -34,7 +34,7 @@ public class PlaceCall implements FlibbleListener
 
     private void go()
     {
-        callMgr.initialize("192.168.0.105",
+        callMgr.initialize("192.168.0.203",
                 5060,
                 9300,
                 9400,
@@ -44,7 +44,7 @@ public class PlaceCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", true, 300, "x616yzzy");
+        lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", true, 300, "bink616");
         
         // or, instead,
         // create a provisioned line, and place the call:
@@ -88,9 +88,9 @@ public class PlaceCall implements FlibbleListener
             if (event.getEventCode() == EventCode.LINE_REGISTERED)
             {
                 callHandle = callMgr.createCall(lineHandle,
-                        "sip:reliagility@192.168.0.103");
+                        "sip:mike5@192.168.0.105");
                 callMgr.placeCall(callHandle,
-                        MediaSourceType.MEDIA_SOURCE_NONE,
+                        MediaSourceType.MEDIA_SOURCE_MICROPHONE,
                         null);
             }
         }

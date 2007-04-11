@@ -51,61 +51,70 @@ import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
 public class PlaceCallAction extends ActionThread
 {
     private int timeout = 60000;
+
     private MediaSourceType mediaSourceType;
+
     private String mediaFilename;
+
     private FlibbleSipProvider flibbleProvider;
-    
-    public PlaceCallAction(CallManager callMgr,
-            Call call,
-            MediaSourceType mediaSourceType,
-            String mediaFilename)
+
+    private int receivePort;
+
+    public PlaceCallAction(CallManager callMgr, Call call,
+            MediaSourceType mediaSourceType, String mediaFilename)
     {
         super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         flibbleProvider = InternalCallManager.getInstance()
-            .getProvider(callMgr);
+                .getProvider(callMgr);
     }
-    
+
     public int getTimeout()
     {
         return timeout;
     }
-    
+
     public void setTimeout(int timeout)
     {
         this.timeout = timeout;
     }
-    
+
     public void run()
     {
         try
         {
+            receivePort = InternalCallManager.getInstance().getMediaSocketManager(callMgr).getNextAvailablePort();
+            
             Request request = createRequest();
             setContent(request);
             ClientTransaction ct = flibbleProvider.sendRequest(request);
-            ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            ResponseEvent responseEvent = flibbleProvider
+                    .waitForResponseEvent(ct);
             if (null == responseEvent)
             {
-                
+
             }
             else
             {
+                startMediaReceive();
                 int statusCode = responseEvent.getResponse().getStatusCode();
                 while (true)
                 {
                     if (statusCode >= 500)
                     {
                         EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
-                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL, 
-                                                                                            EventCode.CALL_FAILED,
-                                                                                            eventReason,
-                                                                                            line.getHandle(),
-                                                                                            call.getHandle()));
+                        InternalCallManager.getInstance().fireEvent(
+                                this.callMgr,
+                                new Event(EventType.CALL,
+                                        EventCode.CALL_FAILED, eventReason,
+                                        line.getHandle(), call.getHandle()));
                         break;
                     }
                     else if (statusCode == 401 || statusCode == 403)
@@ -123,31 +132,36 @@ public class PlaceCallAction extends ActionThread
                         {
                             eventReason = EventReason.CALL_FAILED_LOOP_DETECTED;
                         }
-                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
-                                                                                            EventCode.CALL_FAILED,
-                                                                                            eventReason,
-                                                                                            line.getHandle(),
-                                                                                            call.getHandle()));
-                        
+                        InternalCallManager.getInstance().fireEvent(
+                                this.callMgr,
+                                new Event(EventType.CALL,
+                                        EventCode.CALL_FAILED, eventReason,
+                                        line.getHandle(), call.getHandle()));
+
                         break;
                     }
                     else if (statusCode == 183 || statusCode == 180)
                     {
                         // todo - fire a remote ringing event
-                        responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                        responseEvent = flibbleProvider
+                                .waitForResponseEvent(ct);
                     }
                     else if (statusCode < 200)
                     {
-                        responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                        responseEvent = flibbleProvider
+                                .waitForResponseEvent(ct);
                     }
                     else if (statusCode >= 200 && statusCode < 400)
                     {
                         flibbleProvider.ackResponse(responseEvent);
-                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
-                                EventCode.CALL_CONNECTED,
-                                EventReason.CALL_NORMAL,
-                                line.getHandle(),
-                                call.getHandle()));
+                        InternalCallManager.getInstance()
+                                .fireEvent(
+                                        this.callMgr,
+                                        new Event(EventType.CALL,
+                                                EventCode.CALL_CONNECTED,
+                                                EventReason.CALL_NORMAL, line
+                                                        .getHandle(), call
+                                                        .getHandle()));
                         break;
                     }
                     statusCode = responseEvent.getResponse().getStatusCode();
@@ -159,22 +173,24 @@ public class PlaceCallAction extends ActionThread
             e.printStackTrace();
         }
     }
-    
+
     private void setContent(Request request)
     {
         // Create ContentTypeHeader
         ContentTypeHeader contentTypeHeader = null;
         ContentLengthHeader contentLengthHeader = null;
-        SessionDescription localSdp = null; 
-        
+        SessionDescription localSdp = null;
+
         if (mediaSourceType != MediaSourceType.MEDIA_SOURCE_NONE)
         {
             try
             {
-                call.createLocalSdp(null, null);
-                localSdp = call.getLocalSdp(); 
-                contentTypeHeader = flibbleProvider.headerFactory.createContentTypeHeader("application", "sdp");
-                contentLengthHeader = flibbleProvider.headerFactory.createContentLengthHeader(localSdp.toString().length());
+                call.createLocalSdp(null, null, receivePort);
+                localSdp = call.getLocalSdp();
+                contentTypeHeader = flibbleProvider.headerFactory
+                        .createContentTypeHeader("application", "sdp");
+                contentLengthHeader = flibbleProvider.headerFactory
+                        .createContentLengthHeader(localSdp.toString().length());
             }
             catch (Exception e)
             {
@@ -191,11 +207,12 @@ public class PlaceCallAction extends ActionThread
             }
         }
     }
-    
+
     private Request createRequest()
     {
         SipProvider sipProvider = flibbleProvider.sipProvider;
-        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
+        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(
+                callMgr);
         Line fromLine = lineMgr.getLine(call.getLineHandle());
         String fromUser = fromLine.getUser();
         String fromHost = fromLine.getHost();
@@ -205,42 +222,54 @@ public class PlaceCallAction extends ActionThread
         try
         {
             String toUriString = call.getSipUriString();
-            SipURI toUri = (SipURI)flibbleProvider.addressFactory.createURI(toUriString);
-    
+            SipURI toUri = (SipURI) flibbleProvider.addressFactory
+                    .createURI(toUriString);
+
             // create >From Header
-            SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(fromUser,fromHost);
-    
-            Address fromNameAddress = flibbleProvider.addressFactory.createAddress(fromAddress);
+            SipURI fromAddress = flibbleProvider.addressFactory.createSipURI(
+                    fromUser, fromHost);
+
+            Address fromNameAddress = flibbleProvider.addressFactory
+                    .createAddress(fromAddress);
             fromNameAddress.setDisplayName(fromDisplayName);
-            FromHeader fromHeader = flibbleProvider.headerFactory.createFromHeader(fromNameAddress,
-                    Utils.generateTag());
-            
+            FromHeader fromHeader = flibbleProvider.headerFactory
+                    .createFromHeader(fromNameAddress, Utils.generateTag());
+
             // create To Header
-            Address toNameAddress = flibbleProvider.addressFactory.createAddress(toUri);
-            ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(toNameAddress,null);
-    
+            Address toNameAddress = flibbleProvider.addressFactory
+                    .createAddress(toUri);
+            ToHeader toHeader = flibbleProvider.headerFactory.createToHeader(
+                    toNameAddress, null);
+
             // create Contact Header
-            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(fromUser, callMgr.getLocalIp());
-            Address contactAddress = flibbleProvider.addressFactory.createAddress(contactUri);
-            ((SipURI)contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
-            ContactHeader contactHeader = flibbleProvider.headerFactory.createContactHeader(contactAddress);
-            
+            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(
+                    fromUser, callMgr.getLocalIp());
+            Address contactAddress = flibbleProvider.addressFactory
+                    .createAddress(contactUri);
+            ((SipURI) contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
+            ContactHeader contactHeader = flibbleProvider.headerFactory
+                    .createContactHeader(contactAddress);
+
             // Create ViaHeaders
             ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
-            ViaHeader viaHeader = flibbleProvider.headerFactory.createViaHeader(callMgr.getLocalIp(), sipProvider.getListeningPoint("udp").getPort(),"udp", null);
+            ViaHeader viaHeader = flibbleProvider.headerFactory
+                    .createViaHeader(callMgr.getLocalIp(), sipProvider
+                            .getListeningPoint("udp").getPort(), "udp", null);
             // add via headers
             viaHeaders.add(viaHeader);
-    
-    
+
             // Create a new CallId header
-            CallIdHeader callIdHeader = flibbleProvider.headerFactory.createCallIdHeader(call.getCallId());
-    
+            CallIdHeader callIdHeader = flibbleProvider.headerFactory
+                    .createCallIdHeader(call.getCallId());
+
             // Create a new Cseq header
-            CSeqHeader cSeqHeader = flibbleProvider.headerFactory.createCSeqHeader((long)1,Request.INVITE);
-    
+            CSeqHeader cSeqHeader = flibbleProvider.headerFactory
+                    .createCSeqHeader((long) 1, Request.INVITE);
+
             // Create a new MaxForwardsHeader
-            MaxForwardsHeader maxForwards = flibbleProvider.headerFactory.createMaxForwardsHeader(70);
-    
+            MaxForwardsHeader maxForwards = flibbleProvider.headerFactory
+                    .createMaxForwardsHeader(70);
+
             // Create the request.
             request = flibbleProvider.messageFactory.createRequest(toUri,
                     Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
@@ -252,5 +281,31 @@ public class PlaceCallAction extends ActionThread
             e.printStackTrace();
         }
         return request;
+    }
+
+    private void startMediaReceive()
+    {
+        boolean bUseSoundCard = callMgr.getUseSoundCard();
+
+        if (true == bUseSoundCard)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                    .getMediaPluginClass();
+            FlibbleMediaProvider mediaProvider = null;
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            mediaProvider.initializeRtpReceive(callMgr,
+                    this.call.getHandle(),
+                    callMgr.getLocalIp(),
+                    receivePort);
+            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
+        }
     }
 }

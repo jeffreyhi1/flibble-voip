@@ -140,7 +140,7 @@ public class Call
         this.dialog = dialog;
     }
     
-    public void createLocalSdp(String[] codecNames, SessionDescription remoteSdp)
+    public void createLocalSdp(String[] codecNames, SessionDescription remoteSdp, int receivePort)
     {
         String ipToShare = callMgr.getLocalIp();
         try
@@ -174,7 +174,7 @@ public class Call
             // Media Description
             MediaDescription mediaDescription = SdpFactory.getInstance()
                     .createMediaDescription("audio",
-                            callMgr.getMediaPortStart(),
+                            receivePort,
                             1,
                             "RTP/AVP",
                             new int[] { 0, 101 });            

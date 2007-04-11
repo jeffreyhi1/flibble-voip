@@ -27,23 +27,26 @@ import com.sipresponse.flibblecallmgr.CallManager;
 public class MediaSocketManager
 {
     private CallManager callMgr;
+
     private int portRangeStart;
+
     private int portRangeEnd;
+
     private boolean[] inUse;
-    private ConcurrentHashMap<Integer, DatagramSocket> socketMap = 
-        new ConcurrentHashMap<Integer, DatagramSocket>();
+
+    private ConcurrentHashMap<Integer, DatagramSocket> socketMap = new ConcurrentHashMap<Integer, DatagramSocket>();
+
     private Object sync = new Object();
-    
-    public MediaSocketManager(CallManager callMgr,
-                              int startPortRange,
-                              int endPortRange)
+
+    public MediaSocketManager(CallManager callMgr, int startPortRange,
+            int endPortRange)
     {
         this.callMgr = callMgr;
         this.portRangeStart = startPortRange;
         this.portRangeEnd = endPortRange;
         inUse = new boolean[(endPortRange - startPortRange) / 2];
     }
-    
+
     public int getNextAvailablePort()
     {
         int next = -1;
@@ -53,15 +56,32 @@ public class MediaSocketManager
             {
                 if (false == inUse[i])
                 {
-                    next = i + portRangeStart;
-                    inUse[i] = true;
-                    break;
+                    DatagramSocket test = null;
+                    try
+                    {
+                        test = new DatagramSocket(portRangeStart + i );
+                        test.close();
+                        test = new DatagramSocket(portRangeStart + i + 1);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                   
+                    if (null != test)
+                    {
+                        next = i + portRangeStart;
+                        inUse[i] = true;
+                        test.close();
+                        test = null;
+                        break;
+                    }
                 }
             }
         }
         return next;
     }
-    
+
     public DatagramSocket getSocket(int port)
     {
         DatagramSocket socket = null;
@@ -83,7 +103,7 @@ public class MediaSocketManager
         }
         return socket;
     }
-    
+
     public void removeSocket(int port)
     {
         DatagramSocket socket = socketMap.get(new Integer(port));
@@ -92,12 +112,12 @@ public class MediaSocketManager
             removeSocket(socket, port);
         }
     }
-    
+
     public void removeSocket(DatagramSocket socket)
     {
-        removeSocket(socket, socket.getLocalPort()); 
+        removeSocket(socket, socket.getLocalPort());
     }
-    
+
     private void removeSocket(DatagramSocket socket, int port)
     {
         synchronized (sync)
@@ -116,8 +136,8 @@ public class MediaSocketManager
             {
                 if (port % 2 == 0)
                 {
-                    removeSocket(port+1); // remove the RTCP socket as well
-                    inUse[port - portRangeStart ] = false;
+                    removeSocket(port + 1); // remove the RTCP socket as well
+                    inUse[port - portRangeStart] = false;
                 }
             }
             socketMap.remove(new Integer(port));
