@@ -19,13 +19,36 @@
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 import javax.media.protocol.PushSourceStream;
 import javax.media.rtp.OutputDataStream;
 import javax.media.rtp.RTPConnector;
 
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.plugin.jmf.ReceiveAdapter.SocketOutputStream;
+
 public class SendAdapter implements RTPConnector
 {
+    private MediaSocketManager socketMgr;
+    private String address;
+    private int port;
+    private SocketOutputStream rtpOutputStream;
+    private SocketOutputStream rtcpOutputStream;
+    private DatagramSocket rtpSocket;
+    private DatagramSocket rtcpSocket;
+    
+    public SendAdapter(CallManager callMgr,
+            String address,
+            int port)
+    {
+        this.address = address;
+        this.port = port;
+    }
+    
     public void close()
     {
     }
@@ -37,7 +60,15 @@ public class SendAdapter implements RTPConnector
 
     public OutputDataStream getControlOutputStream() throws IOException
     {
-        return null;
+        if (rtcpOutputStream == null)
+        {
+            if (null == rtcpSocket)
+            {
+                rtcpSocket = this.socketMgr.getSocket(port+1);
+            }
+            rtcpOutputStream = new SocketOutputStream(rtcpSocket, InetAddress.getByName(address), port+1);
+        }
+        return rtcpOutputStream;
     }
 
     public PushSourceStream getDataInputStream() throws IOException
@@ -47,7 +78,15 @@ public class SendAdapter implements RTPConnector
 
     public OutputDataStream getDataOutputStream() throws IOException
     {
-        return null;
+        if (rtpOutputStream == null)
+        {
+            if (null == rtpSocket)
+            {
+                rtpSocket = this.socketMgr.getSocket(port);
+            }
+            rtpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), port);
+        }
+        return rtpOutputStream;
     }
 
     public double getRTCPBandwidthFraction()
@@ -76,6 +115,39 @@ public class SendAdapter implements RTPConnector
 
     public void setSendBufferSize(int arg0) throws IOException
     {
+    }
+    
+    /**
+     * An inner class to implement an OutputDataStream based on UDP sockets.
+     */
+    class SocketOutputStream implements OutputDataStream
+    {
+
+        DatagramSocket sock;
+
+        InetAddress addr;
+
+        int port;
+
+        public SocketOutputStream(DatagramSocket sock, InetAddress addr, int port)
+        {
+            this.sock = sock;
+            this.addr = addr;
+            this.port = port;
+        }
+
+        public int write(byte data[], int offset, int len)
+        {
+            try
+            {
+                sock.send(new DatagramPacket(data, offset, len, addr, port));
+            }
+            catch (Exception e)
+            {
+                return -1;
+            }
+            return len;
+        }
     }
 
 }
