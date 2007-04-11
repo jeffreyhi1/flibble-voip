@@ -23,10 +23,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import javax.media.protocol.ContentDescriptor;
 import javax.media.protocol.PushSourceStream;
+import javax.media.protocol.SourceTransferHandler;
 import javax.media.rtp.OutputDataStream;
 import javax.media.rtp.RTPConnector;
-
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
@@ -36,11 +37,21 @@ public class ReceiveAdapter implements RTPConnector
 
     private DatagramSocket rtpSocket;
     private DatagramSocket rtcpSocket;
-    private SocketOutputStream rtpOutputStream;
-    private SocketOutputStream rtcpOutputStream;
+//    private SocketOutputStream rtpOutputStream;
+//    private SocketOutputStream rtcpOutputStream;
+
+    private SocketInputStream dataInStrm;
+    private SocketInputStream ctrlInStrm = null;
     private MediaSocketManager socketMgr;
     private String address;
     private int port;
+    
+    DatagramSocket dataSock;
+
+    DatagramSocket ctrlSock;
+
+    InetAddress addr;
+
     
     public ReceiveAdapter(CallManager callMgr,
                           String address,
@@ -58,33 +69,48 @@ public class ReceiveAdapter implements RTPConnector
         socketMgr.removeSocket(port);
     }
 
+    /**
+     * Returns an input stream to receive the RTCP data.
+     */
     public PushSourceStream getControlInputStream() throws IOException
     {
-        
-        return null;
+        if (ctrlInStrm == null)
+        {
+            if (null == ctrlSock)
+            {
+                ctrlSock = this.socketMgr.getSocket(port+1);
+            }
+            ctrlInStrm = new SocketInputStream(ctrlSock, addr, port + 1);
+            ctrlInStrm.start();
+        }
+        return ctrlInStrm;
     }
 
     public OutputDataStream getControlOutputStream() throws IOException
     {
-        if (rtcpOutputStream == null)
-        {
-            rtcpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), port+1);
-        }
-        return rtcpOutputStream;
+        return null;
     }
 
+    /**
+     * Returns an input stream to receive the RTP data.
+     */
     public PushSourceStream getDataInputStream() throws IOException
     {
-        return null;
+        if (dataInStrm == null)
+        {
+            if (null == dataSock)
+            {
+                dataSock = this.socketMgr.getSocket(port);
+            }
+            dataInStrm = new SocketInputStream(dataSock, addr, port);
+            dataInStrm.start();
+        }
+        return dataInStrm;
     }
 
     public OutputDataStream getDataOutputStream() throws IOException
     {
-        if (rtpOutputStream == null)
-        {
-            rtpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), port);
-        }
-        return rtpOutputStream;
+        return null;
     }
 
     public double getRTCPBandwidthFraction()
@@ -149,4 +175,138 @@ public class ReceiveAdapter implements RTPConnector
             return len;
         }
     }
+    /**
+     * An inner class to implement an PushSourceStream based on UDP sockets.
+     */
+    class SocketInputStream extends Thread implements PushSourceStream
+    {
+
+        DatagramSocket sock;
+
+        InetAddress addr;
+
+        int port;
+
+        boolean done = false;
+
+        boolean dataRead = false;
+
+        SourceTransferHandler sth = null;
+
+        public SocketInputStream(DatagramSocket sock, InetAddress addr, int port)
+        {
+            this.sock = sock;
+            this.addr = addr;
+            this.port = port;
+        }
+
+        public int read(byte buffer[], int offset, int length)
+        {
+            DatagramPacket p = new DatagramPacket(buffer, offset, length, addr,
+                    port);
+            try
+            {
+                sock.receive(p);
+            }
+            catch (IOException e)
+            {
+                return -1;
+            }
+            synchronized (this)
+            {
+                dataRead = true;
+                notify();
+            }
+            return p.getLength();
+        }
+
+        public synchronized void start()
+        {
+            super.start();
+            if (sth != null)
+            {
+                dataRead = true;
+                notify();
+            }
+        }
+
+        public synchronized void kill()
+        {
+            done = true;
+            notify();
+        }
+
+        public int getMinimumTransferSize()
+        {
+            return 2 * 1024; // twice the MTU size, just to be safe.
+        }
+
+        public synchronized void setTransferHandler(SourceTransferHandler sth)
+        {
+            this.sth = sth;
+            dataRead = true;
+            notify();
+        }
+
+        // Not applicable.
+        public ContentDescriptor getContentDescriptor()
+        {
+            return null;
+        }
+
+        // Not applicable.
+        public long getContentLength()
+        {
+            return LENGTH_UNKNOWN;
+        }
+
+        // Not applicable.
+        public boolean endOfStream()
+        {
+            return false;
+        }
+
+        // Not applicable.
+        public Object[] getControls()
+        {
+            return new Object[0];
+        }
+
+        // Not applicable.
+        public Object getControl(String type)
+        {
+            return null;
+        }
+
+        /**
+         * Loop and notify the transfer handler of new data.
+         */
+        public void run()
+        {
+            while (!done)
+            {
+
+                synchronized (this)
+                {
+                    while (!dataRead && !done)
+                    {
+                        try
+                        {
+                            wait();
+                        }
+                        catch (InterruptedException e)
+                        {
+                        }
+                    }
+                    dataRead = false;
+                }
+
+                if (sth != null && !done)
+                {
+                    sth.transferData(this);
+                }
+            }
+        }
+    }
+    
 }
