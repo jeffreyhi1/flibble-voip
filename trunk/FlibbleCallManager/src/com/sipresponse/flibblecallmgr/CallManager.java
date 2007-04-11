@@ -34,7 +34,6 @@ import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
-import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
 /**
@@ -175,7 +174,7 @@ public class CallManager
         
         // if the application needs to use a sound card, and no
         // plugin class is given, use JMF
-        if (true == useSoundCard)
+        if (true == useSoundCard && null == mediaPluginClass)
         {
             mediaPluginClass = "com.sipresponse.flibblecallmgr.plugin.jmf.JmfPlugin";
         }

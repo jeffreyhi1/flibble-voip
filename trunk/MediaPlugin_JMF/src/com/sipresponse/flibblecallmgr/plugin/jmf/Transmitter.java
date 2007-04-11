@@ -21,6 +21,7 @@ package com.sipresponse.flibblecallmgr.plugin.jmf;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import javax.media.Codec;
 import javax.media.Controller;
 import javax.media.ControllerClosedEvent;
 import javax.media.ControllerEvent;
@@ -30,6 +31,7 @@ import javax.media.MediaLocator;
 import javax.media.NoProcessorException;
 import javax.media.Processor;
 import javax.media.control.TrackControl;
+import javax.media.format.AudioFormat;
 import javax.media.format.VideoFormat;
 import javax.media.protocol.ContentDescriptor;
 import javax.media.protocol.DataSource;
@@ -39,7 +41,9 @@ import javax.media.rtp.RTPManager;
 import javax.media.rtp.SendStream;
 import javax.media.rtp.rtcp.SourceDescription;
 
+import com.ibm.media.codec.audio.PCMToPCM;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sun.media.codec.audio.rc.RateCvrt;
 
 public class Transmitter
 {
@@ -146,7 +150,7 @@ public class Transmitter
         processor.setContentDescriptor(cd);
 
         Format supported[];
-        Format chosen;
+        Format chosen = null;
         boolean atLeastOneTrack = false;
 
         // Program the tracks.
@@ -179,9 +183,31 @@ public class Transmitter
         if (!atLeastOneTrack)
             return "Couldn't set any of the tracks to a valid RTP format";
 
-        // Realize the processor. This will internally create a flow
-        // graph and attempt to create an output datasource for JPEG/RTP
-        // audio frames.
+        Codec[] codecs = new Codec[3];
+        com.ibm.media.codec.audio.AudioPacketizer packetizer =  null;
+        
+        packetizer = new com.sun.media.codec.audio.ulaw.Packetizer();
+        ((com.sun.media.codec.audio.ulaw.Packetizer)packetizer).setPacketSize(160);    
+        
+        
+        RateCvrt RateCvrt = new RateCvrt();
+        PCMToPCM pcmConvert = new PCMToPCM();
+        
+        RateCvrt.setInputFormat(new Format(AudioFormat.LINEAR));
+        codecs[0] = RateCvrt;
+        codecs[1] = pcmConvert;
+        codecs[2] = packetizer;
+
+        try
+        {
+            tracks[0].setCodecChain(codecs);
+            tracks[0].setFormat(chosen);
+        }
+        catch (javax.media.UnsupportedPlugInException e)
+        {
+            e.printStackTrace();
+        }
+
         result = waitForState(processor, Controller.Realized);
         if (result == false)
             return "Couldn't realize processor";
