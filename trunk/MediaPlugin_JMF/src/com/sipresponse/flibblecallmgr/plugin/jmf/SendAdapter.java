@@ -23,11 +23,14 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import javax.media.protocol.ContentDescriptor;
 import javax.media.protocol.PushSourceStream;
+import javax.media.protocol.SourceTransferHandler;
 import javax.media.rtp.OutputDataStream;
 import javax.media.rtp.RTPConnector;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 import com.sipresponse.flibblecallmgr.plugin.jmf.ReceiveAdapter.SocketOutputStream;
 
@@ -47,6 +50,7 @@ public class SendAdapter implements RTPConnector
     {
         this.address = address;
         this.port = port;
+        socketMgr = InternalCallManager.getInstance().getMediaSocketManager(callMgr);
     }
     
     public void close()
@@ -55,7 +59,7 @@ public class SendAdapter implements RTPConnector
 
     public PushSourceStream getControlInputStream() throws IOException
     {
-        return null;
+        return new DummyInputStream();
     }
 
     public OutputDataStream getControlOutputStream() throws IOException
@@ -73,7 +77,7 @@ public class SendAdapter implements RTPConnector
 
     public PushSourceStream getDataInputStream() throws IOException
     {
-        return null;
+        return new DummyInputStream();
     }
 
     public OutputDataStream getDataOutputStream() throws IOException
@@ -82,7 +86,7 @@ public class SendAdapter implements RTPConnector
         {
             if (null == rtpSocket)
             {
-                rtpSocket = this.socketMgr.getSocket(port);
+                rtpSocket = socketMgr.getSocket(port);
             }
             rtpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), port);
         }
@@ -141,6 +145,7 @@ public class SendAdapter implements RTPConnector
             try
             {
                 sock.send(new DatagramPacket(data, offset, len, addr, port));
+                Thread.sleep(15);  //smooth out the inter-arrival jitter
             }
             catch (Exception e)
             {
@@ -149,5 +154,51 @@ public class SendAdapter implements RTPConnector
             return len;
         }
     }
+    
+    public class DummyInputStream implements PushSourceStream
+    {
+
+     public int getMinimumTransferSize()
+     {
+         return 0;
+     }
+
+     public int read(byte[] arg0, int arg1, int arg2) throws IOException
+     {
+         // TODO Auto-generated method stub
+         return -1;
+     }
+
+     public void setTransferHandler(SourceTransferHandler arg0)
+     {
+         
+     }
+
+     public boolean endOfStream()
+     {
+         return true;
+     }
+
+     public ContentDescriptor getContentDescriptor()
+     {
+         return null;
+     }
+
+     public long getContentLength()
+     {
+         return 0;
+     }
+
+     public Object getControl(String arg0)
+     {
+         return null;
+     }
+
+     public Object[] getControls()
+     {
+         return null;
+     }
+
+    }    
 
 }

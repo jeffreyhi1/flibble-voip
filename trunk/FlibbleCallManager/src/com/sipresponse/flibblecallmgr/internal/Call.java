@@ -23,7 +23,9 @@ import java.util.Vector;
 import javax.sdp.Connection;
 import javax.sdp.MediaDescription;
 import javax.sdp.Origin;
+import javax.sdp.SdpException;
 import javax.sdp.SdpFactory;
+import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
 import javax.sdp.SessionName;
 import javax.sdp.Time;
@@ -85,6 +87,44 @@ public class Call
     public void setRemoteSdp(SessionDescription remoteSdp)
     {
         this.remoteSdp = remoteSdp;
+    }
+    
+    public String getRemoteSdpAddress()
+    {
+        String address = null;
+        
+        try
+        {
+            address = remoteSdp.getConnection().getAddress();
+        }
+        catch (SdpParseException e)
+        {
+            e.printStackTrace();
+        }
+        return address;
+    }
+    
+    public int getRemoteSdpPort()
+    {
+        int remotePort = -1;
+        MediaDescription description = null;
+        try
+        {
+            description = (MediaDescription) remoteSdp.getMediaDescriptions(false).get(0);
+        }
+        catch (SdpException e)
+        {
+            e.printStackTrace();
+        }
+        try
+        {
+            remotePort = description.getMedia().getMediaPort();
+        }
+        catch (SdpParseException e)
+        {
+            e.printStackTrace();
+        }
+        return remotePort;
     }
     public Call(CallManager callMgr,
             String lineHandle,

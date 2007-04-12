@@ -23,6 +23,7 @@ import gov.nist.javax.sip.Utils;
 import java.text.ParseException;
 import java.util.ArrayList;
 
+import javax.sdp.SdpFactory;
 import javax.sdp.SessionDescription;
 import javax.sip.ClientTransaction;
 import javax.sip.ResponseEvent;
@@ -65,7 +66,10 @@ public class PlaceCallAction extends ActionThread
     private FlibbleSipProvider flibbleProvider;
 
     private int receivePort;
-
+    private FlibbleMediaProvider mediaProvider;
+    private String destIp;
+    private int destPort;
+    
     public PlaceCallAction(CallManager callMgr, Call call,
             MediaSourceType mediaSourceType, String mediaFilename)
     {
@@ -153,6 +157,14 @@ public class PlaceCallAction extends ActionThread
                     }
                     else if (statusCode >= 200 && statusCode < 400)
                     {
+                        if (200 == statusCode)
+                        {
+                            SessionDescription remoteSdp = 
+                                SdpFactory.getInstance().createSessionDescription(
+                                        new String(responseEvent.getResponse().getRawContent()));
+                            call.setRemoteSdp(remoteSdp);
+                            startMediaSend();
+                        }
                         flibbleProvider.ackResponse(responseEvent);
                         InternalCallManager.getInstance()
                                 .fireEvent(
@@ -291,7 +303,6 @@ public class PlaceCallAction extends ActionThread
         {
             String mediaPluginClassName = InternalCallManager.getInstance()
                     .getMediaPluginClass();
-            FlibbleMediaProvider mediaProvider = null;
             try
             {
                 mediaProvider = (FlibbleMediaProvider) Class.forName(
@@ -308,4 +319,31 @@ public class PlaceCallAction extends ActionThread
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }
+    
+    private void startMediaSend()
+    {
+        boolean bUseSoundCard = callMgr.getUseSoundCard();
+
+        destPort = call.getRemoteSdpPort();
+        destIp = call.getRemoteSdpAddress();
+        if (true == bUseSoundCard)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                    .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            mediaProvider.initializeRtpSend(callMgr,
+                    this.call.getHandle(),
+                    destIp, destPort);
+            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
+        }
+    }
+    
 }
