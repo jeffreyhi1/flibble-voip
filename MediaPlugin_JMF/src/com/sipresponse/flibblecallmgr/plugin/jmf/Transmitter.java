@@ -43,6 +43,7 @@ import javax.media.rtp.rtcp.SourceDescription;
 
 import com.ibm.media.codec.audio.PCMToPCM;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sun.media.codec.audio.rc.RateCvrt;
 
 public class Transmitter
@@ -62,6 +63,7 @@ public class Transmitter
         this.callHandle = callHandle;
         this.destIp = destIp;
         this.destPort = destPort;
+        start();
     }
 
     public synchronized String start()
@@ -110,7 +112,7 @@ public class Transmitter
 
         try
         {
-            ds = javax.media.Manager.createDataSource(new MediaLocator("javasound://22100"));
+            ds = javax.media.Manager.createDataSource(new MediaLocator("javasound://8000"));
         }
         catch (Exception e)
         {
@@ -208,12 +210,15 @@ public class Transmitter
             e.printStackTrace();
         }
 
+        processor.realize();
         result = waitForState(processor, Controller.Realized);
         if (result == false)
             return "Couldn't realize processor";
 
         // Get the output data source of the processor
         dataOutput = processor.getDataOutput();
+        
+        processor.start();
 
         return null;
     }
@@ -252,6 +257,7 @@ public class Transmitter
             }
             catch (Exception e)
             {
+                e.printStackTrace();
                 return e.getMessage();
             }
         }

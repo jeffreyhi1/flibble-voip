@@ -54,7 +54,7 @@ public class PlaceCall implements FlibbleListener
         //callMgr.placeCall(callHandle);
  
         
-        // wait for 30 seconds for the line to register,
+        // wait for 300 seconds for the line to register,
         // and for the call to go through
         int count = 0;
         while (shouldExit == false)
@@ -69,7 +69,7 @@ public class PlaceCall implements FlibbleListener
                 e.printStackTrace();
             }
             count++;
-            if (count > 300)
+            if (count > 3000)
             {
                 shouldExit = true;
             }
@@ -111,6 +111,7 @@ public class PlaceCall implements FlibbleListener
     {
         PlaceCall placeCall = new PlaceCall();
         placeCall.go();
+        System.exit(0);
 
     }
 }
