@@ -46,7 +46,6 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
     private RTPManager rtpMgr;
     private String callHandle;
     private Object dataSync = new Object();
-    private boolean dataReceived = false;
     
     public Receiver(CallManager callMgr, String callHandle, String address, int port)
     {
@@ -75,8 +74,6 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
     {
         if (evt instanceof NewParticipantEvent)
         {
-            Participant p = ((NewParticipantEvent)evt).getParticipant();
-            System.err.println("  - A new participant had just joined: " + p.getCNAME());
         }
     }
 
@@ -104,22 +101,6 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
         
                 // Find out the formats.
                 RTPControl ctl = (RTPControl)ds.getControl("javax.media.rtp.RTPControl");
-                if (ctl != null)
-                {
-                    System.err.println("  - Recevied new RTP stream: " + ctl.getFormat());
-                }
-                else
-                {
-                    System.err.println("  - Recevied new RTP stream");
-                }
-                if (participant == null)
-                {
-                    System.err.println("      The sender of this stream had yet to be identified.");
-                }
-                else
-                {
-                    System.err.println("      The stream comes from: " + participant.getCNAME()); 
-                }
         
                 // create a player by passing datasource to the Media Manager
                 Player p = javax.media.Manager.createPlayer(ds);
@@ -132,7 +113,6 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
                 // Notify intialize() that a new stream had arrived.
                 synchronized (dataSync)
                 {
-                    dataReceived = true;
                     dataSync.notifyAll();
                 }
         
@@ -148,22 +128,11 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
 
             if (stream != null && stream.getDataSource() != null)
             {
-                DataSource ds = stream.getDataSource();
-                // Find out the formats.
-                RTPControl ctl = (RTPControl) ds
-                        .getControl("javax.media.rtp.RTPControl");
-                System.err.println("  - The previously unidentified stream ");
-                if (ctl != null)
-                    System.err.println("      " + ctl.getFormat());
-                System.err.println("      had now been identified as sent by: "
-                        + participant.getCNAME());
             }
         }
         else if (evt instanceof ByeEvent)
         {
 
-            System.err.println("  - Got \"bye\" from: "
-                    + participant.getCNAME());
         }
 
     }
