@@ -45,7 +45,7 @@ public class ByeHandler extends Handler
         Response response = null;
         try
         {
-            flibbleProvider.messageFactory.createResponse(200, requestEvent.getRequest());
+            response = flibbleProvider.messageFactory.createResponse(200, requestEvent.getRequest());
         }
         catch (Exception e)
         {
