@@ -96,7 +96,8 @@ public class PlaceCall implements FlibbleListener
         }
         else if (event.getEventType() == EventType.CALL)
         {
-            if (event.getEventCode() == EventCode.CALL_FAILED)
+            if (event.getEventCode() == EventCode.CALL_FAILED ||
+                event.getEventCode() == EventCode.CALL_DISCONNECTED)
             {
                 shouldExit = true;
             }
