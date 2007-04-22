@@ -18,7 +18,6 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr;
 
-
 public class Event
 {
     private EventType eventType;
