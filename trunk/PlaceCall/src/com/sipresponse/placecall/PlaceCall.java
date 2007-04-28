@@ -31,6 +31,7 @@ public class PlaceCall implements FlibbleListener
     private CallManager callMgr = new CallManager();
     private String lineHandle = null;
     private String callHandle = null;
+    private boolean inCall = false;
 
     private void go()
     {
@@ -44,7 +45,7 @@ public class PlaceCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", true, 300, "bink616");
+        lineHandle = callMgr.addLine("sip:mike2@192.168.0.105", "Foo Bar", true, 300, "P@ssw0rd");
         
         // or, instead,
         // create a provisioned line, and place the call:
@@ -87,18 +88,26 @@ public class PlaceCall implements FlibbleListener
             // place the call if the line is registered
             if (event.getEventCode() == EventCode.LINE_REGISTERED)
             {
-                callHandle = callMgr.createCall(lineHandle,
-                        "sip:mike5@192.168.0.105");
-                callMgr.placeCall(callHandle,
-                        MediaSourceType.MEDIA_SOURCE_MICROPHONE,
-                        null);
+                if (false == inCall)
+                {
+                    callHandle = callMgr.createCall(lineHandle,
+                            "sip:mike1@192.168.0.105");
+                    callMgr.placeCall(callHandle,
+                            MediaSourceType.MEDIA_SOURCE_MICROPHONE,
+                            null);
+                }
             }
         }
         else if (event.getEventType() == EventType.CALL)
         {
-            if (event.getEventCode() == EventCode.CALL_FAILED ||
+            if (event.getEventCode() == EventCode.CALL_CONNECTED)
+            {
+                inCall = true;
+            }
+            else if (event.getEventCode() == EventCode.CALL_FAILED ||
                 event.getEventCode() == EventCode.CALL_DISCONNECTED)
             {
+                inCall = false;
                 shouldExit = true;
             }
         }
