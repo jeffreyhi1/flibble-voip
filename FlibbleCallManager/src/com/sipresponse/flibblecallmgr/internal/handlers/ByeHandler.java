@@ -36,6 +36,7 @@ import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 public class ByeHandler extends Handler
 {
@@ -56,7 +57,13 @@ public class ByeHandler extends Handler
                 call.getHandle()));
         
         // stop media here?
+        FlibbleMediaProvider mediaProvider = call.getMediaProvider();
         
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
+            mediaProvider.stopRtpSend(call.getRemoteSdpAddress(), call.getRemoteSdpPort());
+        }
         // send a 200 OK
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
             .getProvider(callMgr);
