@@ -7,6 +7,7 @@
 <project basedir="." default="build" name="PlaceCall">
     <property environment="env"/>
     <property name="ECLIPSE_HOME" value="../../../Program Files/eclipse"/>
+    <property name="MediaPlugin_JMF.location" value="../MediaPlugin_JMF"/>
     <property name="FlibbleCallManager.location" value="../FlibbleCallManager"/>
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.5"/>
@@ -19,16 +20,27 @@
         <pathelement location="${FlibbleCallManager.location}/lib/log4j-1.2.8.jar"/>
         <pathelement location="${FlibbleCallManager.location}/lib/jakarta-regexp-1.3.jar"/>
         <pathelement location="${FlibbleCallManager.location}/lib/concurrent.jar"/>
-        <pathelement location="${FlibbleCallManager.location}/lib/sip-sdp.jar"/>
-        <pathelement location="${FlibbleCallManager.location}/lib/nist-sdp-1.0.jar"/>
-        <pathelement location="${FlibbleCallManager.location}/lib/JainSipRi1.2.jar"/>
-        <pathelement location="${FlibbleCallManager.location}/lib/JainSipApi1.2.jar"/>
         <pathelement location="${FlibbleCallManager.location}/lib/junit-4.1.jar"/>
+        <pathelement location="${FlibbleCallManager.location}/lib/JainSipApi1.2.jar"/>
+        <pathelement location="${FlibbleCallManager.location}/lib/JainSipRi1.2.jar"/>
+        <pathelement location="${FlibbleCallManager.location}/lib/nist-sdp-1.0.jar"/>
+        <pathelement location="${FlibbleCallManager.location}/lib/sip-sdp.jar"/>
     </path>
     <path id="PlaceCall.classpath">
         <pathelement location="bin"/>
         <path refid="Standard Widget Toolkit (SWT).libraryclasspath"/>
         <path refid="FlibbleCallManager.classpath"/>
+    </path>
+    <path id="MediaPlugin_JMF.classpath">
+        <pathelement location="${MediaPlugin_JMF.location}/bin"/>
+        <path refid="FlibbleCallManager.classpath"/>
+        <pathelement location="${MediaPlugin_JMF.location}/lib/jmf.jar"/>
+    </path>
+    <path id="run.PlaceCall.classpath">
+        <path refid="PlaceCall.classpath"/>
+        <path refid="MediaPlugin_JMF.classpath"/>
+        <path refid="FlibbleCallManager.classpath"/>
+        <pathelement location="${MediaPlugin_JMF.location}/lib/jmf.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -73,7 +85,7 @@
     </target>
     <target name="PlaceCall">
         <java classname="com.sipresponse.placecall.PlaceCall" failonerror="true" fork="yes">
-            <classpath refid="PlaceCall.classpath"/>
+            <classpath refid="run.PlaceCall.classpath"/>
         </java>
     </target>
 </project>
