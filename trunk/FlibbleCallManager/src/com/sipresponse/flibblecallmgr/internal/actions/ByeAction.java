@@ -22,8 +22,6 @@ import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
 import javax.sip.SipException;
-import javax.sip.TransactionDoesNotExistException;
-import javax.sip.TransactionUnavailableException;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -34,8 +32,7 @@ import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
-import com.sipresponse.flibblecallmgr.internal.Line;
-import com.sipresponse.flibblecallmgr.internal.util.Signal;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 public class ByeAction extends ActionThread
 {
@@ -60,6 +57,13 @@ public class ByeAction extends ActionThread
     {
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
             .getProvider(callMgr);
+        FlibbleMediaProvider mediaProvider = call.getMediaProvider();
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
+            mediaProvider.stopRtpSend(call.getRemoteSdpAddress(), call.getRemoteSdpPort());
+        }
+        
         Dialog dialog = call.getDialog();
         Request bye = null;
         try
@@ -92,6 +96,8 @@ public class ByeAction extends ActionThread
                     line.getHandle(),
                     call.getHandle()));
             
+            // remove call from internal call manager
+            InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
         }
         
     }

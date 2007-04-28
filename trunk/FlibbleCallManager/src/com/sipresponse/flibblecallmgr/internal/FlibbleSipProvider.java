@@ -86,10 +86,11 @@ public class FlibbleSipProvider implements SipListener
 
         Properties properties = new Properties();
         properties.setProperty("javax.sip.STACK_NAME", "FlibbleSipProvider" + new Random().nextInt());
+        properties.setProperty("javax.sip.OUTBOUND_PROXY", callMgr.getProxyAddress() + ":" + callMgr.getProxyPort()+ "/" + "udp");
         properties.setProperty("gov.nist.javax.sip.MAX_MESSAGE_SIZE", "1048576");
-        properties.setProperty("gov.nist.javax.sip.DEBUG_LOG","shootistAuthdebug.txt");
-        properties.setProperty("gov.nist.javax.sip.SERVER_LOG","shootistAuthlog.txt");
-        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "16");
+        properties.setProperty("gov.nist.javax.sip.DEBUG_LOG","flibbleDebug.txt");
+        properties.setProperty("gov.nist.javax.sip.SERVER_LOG","flibble.txt");
+        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
         // Drop the client connection after we are done with the transaction.
         properties.setProperty("gov.nist.javax.sip.CACHE_CLIENT_CONNECTIONS","false");
 

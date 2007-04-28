@@ -82,6 +82,33 @@ public class LineManager
         return lines.get(sLineHandle);
     }
     
+    public Line findLine(SipURI uri)
+    {
+        Line foundLine = null;
+        
+        // get by user 
+        for (Line line : linesVector)
+        {
+            if (line.getUser().equals(uri.getUser()))
+            {
+                foundLine = line;
+            }
+        }
+        return foundLine;
+        
+    }
+    
+    public String findLineHandle(SipURI uri)
+    {
+        Line foundLine = findLine(uri);
+        String foundLineHandle = null;
+        if (null != foundLine)
+        {
+            foundLineHandle = foundLine.getHandle();
+        }
+        return foundLineHandle;
+    }    
+    
     public Vector<Line> getLines()
     {
         return linesVector;
