@@ -299,19 +299,9 @@ public class PlaceCallAction extends ActionThread
     {
         boolean bUseSoundCard = callMgr.getUseSoundCard();
 
-        if (true == bUseSoundCard)
+        mediaProvider = call.getMediaProvider();
+        if (null != mediaProvider)
         {
-            String mediaPluginClassName = InternalCallManager.getInstance()
-                    .getMediaPluginClass();
-            try
-            {
-                mediaProvider = (FlibbleMediaProvider) Class.forName(
-                        mediaPluginClassName).newInstance();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
             mediaProvider.initializeRtpReceive(callMgr,
                     this.call.getHandle(),
                     callMgr.getLocalIp(),
@@ -322,23 +312,12 @@ public class PlaceCallAction extends ActionThread
     
     private void startMediaSend()
     {
-        boolean bUseSoundCard = callMgr.getUseSoundCard();
-
         destPort = call.getRemoteSdpPort();
         destIp = call.getRemoteSdpAddress();
-        if (true == bUseSoundCard)
+        
+        mediaProvider = call.getMediaProvider();
+        if (null != mediaProvider)
         {
-            String mediaPluginClassName = InternalCallManager.getInstance()
-                    .getMediaPluginClass();
-            try
-            {
-                mediaProvider = (FlibbleMediaProvider) Class.forName(
-                        mediaPluginClassName).newInstance();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
             mediaProvider.initializeRtpSend(callMgr,
                     this.call.getHandle(),
                     destIp, destPort);

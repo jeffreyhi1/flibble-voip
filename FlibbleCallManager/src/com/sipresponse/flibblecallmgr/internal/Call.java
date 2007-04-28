@@ -35,6 +35,7 @@ import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 public class Call
 {
@@ -49,6 +50,7 @@ public class Call
     private Line line;
     private Event lastCallEvent;
     private boolean connected = false;
+    private FlibbleMediaProvider mediaProvider;
     
     public Event getLastCallEvent()
     {
@@ -138,6 +140,23 @@ public class Call
         handle = InternalCallManager.getInstance().getNewHandle();
         InternalCallManager.getInstance().addCall(handle, this);
         line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(lineHandle);
+        
+        boolean bUseSoundCard = callMgr.getUseSoundCard();
+
+        if (true == bUseSoundCard)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                    .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
     public String getCallId()
     {
@@ -253,5 +272,9 @@ public class Call
     public CallManager getCallMgr()
     {
         return callMgr;
+    }
+    public FlibbleMediaProvider getMediaProvider()
+    {
+        return mediaProvider;
     }
 }

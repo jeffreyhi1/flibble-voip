@@ -31,7 +31,6 @@ public class PlaceCall implements FlibbleListener
     private CallManager callMgr = new CallManager();
     private String lineHandle = null;
     private String callHandle = null;
-    private boolean inCall = false;
 
     private void go()
     {
@@ -88,26 +87,18 @@ public class PlaceCall implements FlibbleListener
             // place the call if the line is registered
             if (event.getEventCode() == EventCode.LINE_REGISTERED)
             {
-                if (false == inCall)
-                {
-                    callHandle = callMgr.createCall(lineHandle,
-                            "sip:mike1@192.168.0.105");
-                    callMgr.placeCall(callHandle,
-                            MediaSourceType.MEDIA_SOURCE_MICROPHONE,
-                            null);
-                }
+                callHandle = callMgr.createCall(lineHandle,
+                        "sip:mike1@192.168.0.105");
+                callMgr.placeCall(callHandle,
+                        MediaSourceType.MEDIA_SOURCE_MICROPHONE,
+                        null);
             }
         }
         else if (event.getEventType() == EventType.CALL)
         {
-            if (event.getEventCode() == EventCode.CALL_CONNECTED)
-            {
-                inCall = true;
-            }
-            else if (event.getEventCode() == EventCode.CALL_FAILED ||
+            if (event.getEventCode() == EventCode.CALL_FAILED ||
                 event.getEventCode() == EventCode.CALL_DISCONNECTED)
             {
-                inCall = false;
                 shouldExit = true;
             }
         }
