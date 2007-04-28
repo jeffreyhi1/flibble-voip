@@ -50,7 +50,7 @@ public class InviteHandler extends Handler
        LineManager lineMgr = InternalCallManager.getInstance().getLineManager(callMgr);
         
        SipURI uri = (SipURI) requestEvent.getRequest().getRequestURI();
-       String lineHandle = lineMgr.findLine(uri);
+       String lineHandle = lineMgr.findLineHandle(uri);
        Call call = new Call(callMgr, lineHandle, uri.toString(), callId);
         
         // send out a 100 trying

@@ -18,14 +18,8 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.handlers;
 
-import javax.sip.ClientTransaction;
-import javax.sip.Dialog;
-import javax.sip.InvalidArgumentException;
 import javax.sip.RequestEvent;
-import javax.sip.ResponseEvent;
 import javax.sip.ServerTransaction;
-import javax.sip.SipException;
-import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -90,6 +84,5 @@ public class ByeHandler extends Handler
         }
         // remove call from internal call manager
         InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
-        
     }
 }

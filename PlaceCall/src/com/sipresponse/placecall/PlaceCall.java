@@ -39,7 +39,7 @@ public class PlaceCall implements FlibbleListener
                 5060,
                 9300,
                 9400,
-                null,
+                "192.168.0.105",
                 5060,
                 false, null, true, null);
         callMgr.addListener(this);
@@ -55,8 +55,9 @@ public class PlaceCall implements FlibbleListener
         //callMgr.placeCall(callHandle);
  
         
-        // wait for 300 seconds for the line to register,
-        // and for the call to go through
+        // wait for 30 seconds for the line to register,
+        // and for the call to go through,
+        // then if in a call, send a BYE
         int count = 0;
         while (shouldExit == false)
         {
@@ -70,9 +71,21 @@ public class PlaceCall implements FlibbleListener
                 e.printStackTrace();
             }
             count++;
-            if (count > 3000)
+            if (count > 300)
             {
                 shouldExit = true;
+            }
+        }
+        if (true == inCall)
+        {
+            callMgr.endCall(callHandle);
+            try
+            {
+                Thread.sleep(4000);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
             }
         }
         callMgr.destroyCallManager();
