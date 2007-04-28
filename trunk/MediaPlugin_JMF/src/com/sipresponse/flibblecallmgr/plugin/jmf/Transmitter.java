@@ -168,7 +168,13 @@ public class Transmitter
                 // We'll just pick the first one.
                 if (supported.length > 0)
                 {
-                    chosen = supported[0];
+                    for (int j = 0; j < supported.length; j++)
+                    {
+                        if (supported[j].getEncoding().equals("ULAW/rtp"))
+                        {
+                            chosen = supported[j];
+                        }
+                    }
                     tracks[i].setFormat(chosen);
                     System.err
                             .println("Track " + i + " is set to transmit as:");
