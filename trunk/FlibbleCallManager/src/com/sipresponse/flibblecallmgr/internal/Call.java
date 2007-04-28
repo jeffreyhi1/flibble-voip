@@ -51,6 +51,8 @@ public class Call
     private Event lastCallEvent;
     private boolean connected = false;
     private FlibbleMediaProvider mediaProvider;
+    private String localSdpAddress;
+    private int localSdpPort;
     
     public Event getLastCallEvent()
     {
@@ -276,5 +278,21 @@ public class Call
     public FlibbleMediaProvider getMediaProvider()
     {
         return mediaProvider;
+    }
+    public String getLocalSdpAddress()
+    {
+        return localSdpAddress;
+    }
+    public void setLocalSdpAddress(String localSdpAddress)
+    {
+        this.localSdpAddress = localSdpAddress;
+    }
+    public int getLocalSdpPort()
+    {
+        return localSdpPort;
+    }
+    public void setLocalSdpPort(int localSdpPort)
+    {
+        this.localSdpPort = localSdpPort;
     }
 }

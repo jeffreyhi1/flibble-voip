@@ -297,11 +297,12 @@ public class PlaceCallAction extends ActionThread
 
     private void startMediaReceive()
     {
-        boolean bUseSoundCard = callMgr.getUseSoundCard();
 
         mediaProvider = call.getMediaProvider();
         if (null != mediaProvider)
         {
+            call.setLocalSdpAddress(callMgr.getLocalIp());
+            call.setLocalSdpPort(receivePort);
             mediaProvider.initializeRtpReceive(callMgr,
                     this.call.getHandle(),
                     callMgr.getLocalIp(),
