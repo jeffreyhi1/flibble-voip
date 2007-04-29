@@ -22,13 +22,11 @@ import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.SipMessageProcessor;
 
-public class ActionThread extends Thread
+public class ActionThread extends SipMessageProcessor
 {
     protected int timeout = 4000;
-    protected CallManager callMgr;
-    protected Call call;
-    protected Line line;
     
     protected ActionThread(CallManager callMgr, Call call, Line line)
     {

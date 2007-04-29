@@ -31,6 +31,9 @@ import javax.sdp.SessionName;
 import javax.sdp.Time;
 import javax.sdp.Version;
 import javax.sip.Dialog;
+import javax.sip.RequestEvent;
+import javax.sip.ServerTransaction;
+
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
@@ -53,6 +56,8 @@ public class Call
     private FlibbleMediaProvider mediaProvider;
     private String localSdpAddress;
     private int localSdpPort;
+    private RequestEvent lastRequestEvent;
+    private ServerTransaction serverTransaction;
     
     public Event getLastCallEvent()
     {
@@ -294,5 +299,21 @@ public class Call
     public void setLocalSdpPort(int localSdpPort)
     {
         this.localSdpPort = localSdpPort;
+    }
+    public RequestEvent getLastRequestEvent()
+    {
+        return lastRequestEvent;
+    }
+    public void setLastRequestEvent(RequestEvent lastRequestEvent)
+    {
+        this.lastRequestEvent = lastRequestEvent;
+    }
+    public ServerTransaction getServerTransaction()
+    {
+        return serverTransaction;
+    }
+    public void setServerTransaction(ServerTransaction serverTransaction)
+    {
+        this.serverTransaction = serverTransaction;
     }
 }

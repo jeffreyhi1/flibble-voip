@@ -18,6 +18,8 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
+import java.io.IOException;
+
 import javax.media.ControllerErrorEvent;
 import javax.media.ControllerEvent;
 import javax.media.ControllerListener;
@@ -46,6 +48,8 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
     private RTPManager rtpMgr;
     private String callHandle;
     private Object dataSync = new Object();
+    private Player p;
+    private ReceiveStream stream;
     
     public Receiver(CallManager callMgr, String callHandle, String address, int port)
     {
@@ -67,6 +71,26 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
         }
     }
     
+    public void stop()
+    {
+        if (stream != null)
+        {
+            try
+            {
+                stream.getDataSource().stop();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+        if (p != null)
+        {
+            p.stop();
+            p.close();
+        }
+        rtpMgr.dispose();
+    }
     /**
      * SessionListener.
      */
@@ -86,7 +110,7 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
 
         RTPManager mgr = (RTPManager)evt.getSource();
         Participant participant = evt.getParticipant(); // could be null.
-        ReceiveStream stream = evt.getReceiveStream();  // could be null.
+        stream = evt.getReceiveStream();  // could be null.
 
         if (evt instanceof RemotePayloadChangeEvent)
         {
@@ -103,7 +127,7 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
                 RTPControl ctl = (RTPControl)ds.getControl("javax.media.rtp.RTPControl");
         
                 // create a player by passing datasource to the Media Manager
-                Player p = javax.media.Manager.createPlayer(ds);
+                p = javax.media.Manager.createPlayer(ds);
                 if (p == null)
                     return;
         
