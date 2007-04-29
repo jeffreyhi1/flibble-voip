@@ -16,31 +16,44 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  ******************************************************************************/
-package com.sipresponse.flibblecallmgr;
+package com.sipresponse.flibblecallmgr.internal.actions;
 
-public enum EventCode
+import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.internal.Call;
+
+public class AcceptCallAction extends ActionThread
 {
-    // CALL CODES
-    CALL_TRYING,
-    CALL_INCOMING_INVITE,
-    CALL_REMOTE_RINGING,
-    CALL_LOCAL_RINGING,
-    CALL_CONNECTED,
-    CALL_HELD_BY_REMOTE_PARTY,
-    CALL_HOLDING_REMOTE_PARTY,
-    CALL_BIDIRECTIONAL_HOLD,
-    CALL_FAILED,
-    CALL_DISCONNECTED,
-    CALL_TRANSFER,
-    CALL_TRANSFER_FAILED,
+    private int timeout = 4000;
+    private int acceptStatusCode = 180;
     
-    // LINE CODES
-    LINE_UNREGISTERED,
-    LINE_UNREGISTERING,
-    LINE_UNREGISTER_FAILED,
-    LINE_REGISTERING,
-    LINE_REGISTERED,
-    LINE_REGISTER_FAILED,
-    LINE_PROVISIONED,
+    public AcceptCallAction(CallManager callMgr, Call call)
+    {
+        super(callMgr, call, null);
+    }
     
+    public int getTimeout()
+    {
+        return timeout;
+    }
+    
+    public void setTimeout(int timeout)
+    {
+        this.timeout = timeout;
+    }
+    
+    public void run()
+    {
+        sendResponse(acceptStatusCode);
+    }
+
+    public int getAcceptStatusCode()
+    {
+        return acceptStatusCode;
+    }
+
+    public void setAcceptStatusCode(int acceptStatusCode)
+    {
+        this.acceptStatusCode = acceptStatusCode;
+    }
 }
+

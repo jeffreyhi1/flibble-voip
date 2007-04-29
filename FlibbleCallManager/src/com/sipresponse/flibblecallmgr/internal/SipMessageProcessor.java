@@ -16,7 +16,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  ******************************************************************************/
-package com.sipresponse.flibblecallmgr.internal.handlers;
+package com.sipresponse.flibblecallmgr.internal;
 
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
@@ -27,51 +27,26 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
-import com.sipresponse.flibblecallmgr.internal.SipMessageProcessor;
 
-public abstract class Handler extends SipMessageProcessor
+public abstract class SipMessageProcessor extends Thread
 {
-    protected RequestEvent requestEvent;
-    
-    public Handler(CallManager callMgr,
-                   Call call,
-                   Line line,
-                   RequestEvent requestEvent)
+    protected Call call;
+    protected Line line;
+    protected CallManager callMgr;
+
+    public SipMessageProcessor()
     {
-        this.callMgr = callMgr;
-        this.call = call;
-        if (call != null && line == null)
-        {
-            try
-            {
-                this.line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(call.getLineHandle());
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-        else if (call == null && line != null)
-        {
-            this.line = line;
-        }
-        if (call != null)
-        {
-            call.setLastRequestEvent(requestEvent);
-        }
-        this.requestEvent = requestEvent;
     }
-    
-    public abstract void execute();
-    
+
     public void sendResponse(int statusCode)
     {
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
-            .getProvider(callMgr);
+                .getProvider(callMgr);
         Response response = null;
         try
         {
-            response = flibbleProvider.messageFactory.createResponse(statusCode, requestEvent.getRequest());
+            response = flibbleProvider.messageFactory.createResponse(statusCode,
+                    call.getLastRequestEvent().getRequest());
         }
         catch (Exception e)
         {
@@ -79,7 +54,11 @@ public abstract class Handler extends SipMessageProcessor
         }
         if (null != response)
         {
-            ServerTransaction st = requestEvent.getServerTransaction();
+            ServerTransaction st = call.getLastRequestEvent().getServerTransaction();
+            if (null == st)
+            {
+                st = call.getServerTransaction();
+            }
             try
             {
                 st.sendResponse(response);

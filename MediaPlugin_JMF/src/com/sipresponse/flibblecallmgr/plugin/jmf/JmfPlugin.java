@@ -43,6 +43,7 @@ public class JmfPlugin extends FlibbleMediaProvider
     @Override
     public void stopRtpReceive(String address, int port)
     {
+        receiver.stop();
     }
     
     @Override
