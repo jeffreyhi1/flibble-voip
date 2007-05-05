@@ -53,7 +53,8 @@ public abstract class FlibbleMediaProvider
     public abstract void initializeRtpSend(CallManager callMgr,
                                            String callHandle,
                                            String destIp,
-                                           int destPort);
+                                           int destPort,
+                                           int srcPort);
     public abstract void startRtpSend(String destIp, int destPort);
     public abstract void stopRtpSend(String destIp, int destPort);
 }

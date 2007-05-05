@@ -38,7 +38,8 @@ public class SendAdapter implements RTPConnector
 {
     private MediaSocketManager socketMgr;
     private String address;
-    private int port;
+    private int srcPort;
+    private int destPort;
     private SocketOutputStream rtpOutputStream;
     private SocketOutputStream rtcpOutputStream;
     private DatagramSocket rtpSocket;
@@ -46,10 +47,12 @@ public class SendAdapter implements RTPConnector
     
     public SendAdapter(CallManager callMgr,
             String address,
-            int port)
+            int srcPort,
+            int destPort)
     {
         this.address = address;
-        this.port = port;
+        this.srcPort = srcPort;
+        this.destPort = destPort;
         socketMgr = InternalCallManager.getInstance().getMediaSocketManager(callMgr);
     }
     
@@ -68,9 +71,9 @@ public class SendAdapter implements RTPConnector
         {
             if (null == rtcpSocket)
             {
-                rtcpSocket = this.socketMgr.getSocket(port+1);
+                rtcpSocket = this.socketMgr.getSocket(srcPort+1);
             }
-            rtcpOutputStream = new SocketOutputStream(rtcpSocket, InetAddress.getByName(address), port+1);
+            rtcpOutputStream = new SocketOutputStream(rtcpSocket, InetAddress.getByName(address), destPort+1);
         }
         return rtcpOutputStream;
     }
@@ -86,9 +89,9 @@ public class SendAdapter implements RTPConnector
         {
             if (null == rtpSocket)
             {
-                rtpSocket = socketMgr.getSocket(port);
+                rtpSocket = socketMgr.getSocket(srcPort);
             }
-            rtpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), port);
+            rtpOutputStream = new SocketOutputStream(rtpSocket, InetAddress.getByName(address), destPort);
         }
         return rtpOutputStream;
     }

@@ -255,7 +255,7 @@ public class PlaceCallAction extends ActionThread
 
             // create Contact Header
             SipURI contactUri = flibbleProvider.addressFactory.createSipURI(
-                    fromUser, callMgr.getLocalIp());
+                    fromUser, callMgr.getContactIp());
             Address contactAddress = flibbleProvider.addressFactory
                     .createAddress(contactUri);
             ((SipURI) contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
@@ -301,7 +301,7 @@ public class PlaceCallAction extends ActionThread
         mediaProvider = call.getMediaProvider();
         if (null != mediaProvider)
         {
-            call.setLocalSdpAddress(callMgr.getLocalIp());
+            call.setLocalSdpAddress(callMgr.getContactIp());
             call.setLocalSdpPort(receivePort);
             mediaProvider.initializeRtpReceive(callMgr,
                     this.call.getHandle(),
@@ -321,7 +321,8 @@ public class PlaceCallAction extends ActionThread
         {
             mediaProvider.initializeRtpSend(callMgr,
                     this.call.getHandle(),
-                    destIp, destPort);
+                    destIp, destPort,
+                    call.getLocalSdpPort());
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }
