@@ -37,6 +37,7 @@ import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.internal.util.StunDiscovery;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
@@ -48,22 +49,15 @@ import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 public class CallManager
 {
     private String localIp;
-
     private int udpSipPort;
-
     private int mediaPortStart;
-
     private int mediaPortEnd;
-
     private String proxyAddress;
-
     private int proxyPort;
-
     boolean enableStun;
-
     private String stunServer;
-
     private boolean useSoundCard;
+    private String publicIp;
 
     /**
      * Constructor.
@@ -200,6 +194,24 @@ public class CallManager
         InternalCallManager.getInstance().setMediaSocketManager(this,
                 new MediaSocketManager(this, mediaPortStart, mediaPortEnd));
         InternalCallManager.getInstance().setMediaPluginClass(mediaPluginClass);
+        if (stunServer != null)
+        {
+            StunDiscovery stun = new StunDiscovery();
+            boolean bFound = false;
+            try
+            {
+                bFound = stun.discoverPublicIp(stunServer, localIp, -1, null);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            if (true == bFound)
+            {
+                setPublicIp(stun.getPublicIp());
+                System.err.println("Found external ip: " + stun.getPublicIp());
+            }
+        }
     }
 
     /**
@@ -527,6 +539,24 @@ public class CallManager
             e.printStackTrace();
         }
         System.err.println("CallManager destroyed.");
+    }
+
+    protected String getPublicIp()
+    {
+        return publicIp;
+    }
+    
+    public void setPublicIp(String publicIp)
+    {
+        this.publicIp = publicIp;
+    }
+    
+    public String getContactIp()
+    {
+        
+        if (publicIp != null)
+            return publicIp;
+        return localIp;
     }
 
 }

@@ -52,17 +52,19 @@ public class Transmitter
     private String callHandle;
     private String destIp;
     private int destPort;
+    private int srcPort;
     private Processor processor = null;
     private RTPManager rtpMgr;
     private DataSource dataOutput = null;
 
     public Transmitter(CallManager callMgr, String callHandle, String destIp,
-            int destPort)
+            int destPort, int srcPort)
     {
         this.callMgr = callMgr;
         this.callHandle = callHandle;
         this.destIp = destIp;
         this.destPort = destPort;
+        this.srcPort = srcPort;
         start();
     }
 
@@ -252,7 +254,7 @@ public class Transmitter
                 rtpMgr = RTPManager.newInstance();
 
                 // Initialize the RTPManager with the RTPSocketAdapter
-                SendAdapter sendAdapter = new SendAdapter(callMgr, destIp, destPort);
+                SendAdapter sendAdapter = new SendAdapter(callMgr, destIp, srcPort, destPort);
                 rtpMgr.initialize(sendAdapter);
 
                 System.err.println("Created RTP session: " + destIp + " "

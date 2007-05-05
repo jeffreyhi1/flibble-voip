@@ -431,7 +431,7 @@ public class FlibbleSipProvider implements SipListener
                     toHeader, viaHeaders, maxForwardsHeader);
 
             SipURI contactURI = addressFactory.createSipURI(fromUri.getUser(),
-                    callMgr.getLocalIp());
+                    callMgr.getContactIp());
 
             contactURI.setPort(callMgr.getUdpSipPort());
 

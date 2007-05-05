@@ -35,16 +35,18 @@ public class ReceiveCall implements FlibbleListener
     {
         callMgr.initialize("192.168.0.203",
                 5060,
-                9300,
-                9400,
-                "192.168.0.105",
-                5060,
-                false, null, true, null);
+                8000,
+                8020,
+                "sphone.vopr.vonage.net",
+                5061,
+                false,
+                null,
+                true,
+                null);
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:mike2@192.168.0.105", "Foo Bar", true, 300, "P@ssw0rd");
-        
+        lineHandle = callMgr.addLine("sip:17812182814@sphone.vopr.vonage.net", "Foo Bar", true, 40, "_J_9PGVP_9");
         
         while (true)
         {
@@ -54,7 +56,6 @@ public class ReceiveCall implements FlibbleListener
             }
             catch (InterruptedException e)
             {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

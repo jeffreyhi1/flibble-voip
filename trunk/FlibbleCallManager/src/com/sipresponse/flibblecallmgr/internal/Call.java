@@ -208,7 +208,7 @@ public class Call
     
     public void createLocalSdp(String[] codecNames, SessionDescription remoteSdp, int receivePort)
     {
-        String ipToShare = callMgr.getLocalIp();
+        String ipToShare = callMgr.getContactIp();
         try
         {
             localSdp = SdpFactory.getInstance().createSessionDescription();
