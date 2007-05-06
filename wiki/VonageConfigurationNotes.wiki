@@ -17,7 +17,7 @@ String lineHandle = callMgr.addLine("sip:17815551212@sphone.vopr.vonage.net",
                 "Your Name",
                 true,
                 20,
-                "YorPassword" );
+                "YourPassword" );
 }}}
 
 Surprisingly, STUN is _not_ needed.
