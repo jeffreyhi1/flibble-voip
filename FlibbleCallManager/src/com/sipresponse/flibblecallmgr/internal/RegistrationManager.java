@@ -26,7 +26,7 @@ public class RegistrationManager extends Thread
         {
             try
             {
-                Thread.sleep(5000);
+                Thread.sleep(2000);
             }
             catch (InterruptedException e)
             {
@@ -43,7 +43,7 @@ public class RegistrationManager extends Thread
                         line.getStatus() != EventCode.LINE_UNREGISTERING &&
                         line.getStatus() != EventCode.LINE_REGISTERING &&
                             (line.getLastRegisterTimestamp() == 0 ||
-                                    ((now - line.getLastRegisterTimestamp()) / 1000) > (0.50 * line.getRegisterPeriod() )
+                                    ((now - line.getLastRegisterTimestamp()) / 1000) > (0.48 * line.getRegisterPeriod() )
                             )
                    )
                 {

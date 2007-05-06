@@ -96,7 +96,10 @@ public class RegisterAction extends ActionThread
                     }
                     responseCount++;
                     responseEvent = flibbleProvider.waitForResponseEvent(ct);
-                    response = responseEvent.getResponse();
+                    if (responseEvent != null)
+                    {
+                        response = responseEvent.getResponse();
+                    }
                 }
                 if (response != null && response.getStatusCode() == 200)
                 {
