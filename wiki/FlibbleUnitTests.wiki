@@ -26,6 +26,7 @@ The location of the proxy, and the SIP URIs of the user-agents can be specified 
 
   * Create a properties file like the one above (replace all of the ip addresses with the correct ones for your environment).
   * Before running unit tests, copy this file to your "user.home" directory.
+{{{
     ( in Windows, C:\Documents and Settings\YourUsername\, and in Linux /home/YourUsername/)
-
+}}}
 
