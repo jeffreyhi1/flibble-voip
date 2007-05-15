@@ -46,7 +46,7 @@ public class ReceiveCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:17812182814@sphone.vopr.vonage.net", "Foo Bar", true, 40, "_J_9PGVP_9");
+        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "P@ssw0rd");
         
         while (true)
         {
@@ -77,7 +77,9 @@ public class ReceiveCall implements FlibbleListener
                 callMgr.acceptCall(callHandle, 180);
                 
                 // answer the call
-                callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null);
+                //callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null);
+                String filename = java.lang.System.getProperty("user.home") + "/test.wav";
+                callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename);
             }
         }
         return false;

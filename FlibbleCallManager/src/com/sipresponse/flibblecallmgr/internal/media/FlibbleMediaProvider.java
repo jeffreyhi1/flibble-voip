@@ -20,6 +20,7 @@
 package com.sipresponse.flibblecallmgr.internal.media;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 /**
  * Abstract class defining the media control interface. 
@@ -54,7 +55,9 @@ public abstract class FlibbleMediaProvider
                                            String callHandle,
                                            String destIp,
                                            int destPort,
-                                           int srcPort);
+                                           int srcPort,
+                                           MediaSourceType mediaSourceType,
+                                           String mediaFilename);
     public abstract void startRtpSend(String destIp, int destPort);
     public abstract void stopRtpSend(String destIp, int destPort);
 }
