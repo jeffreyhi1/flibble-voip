@@ -200,7 +200,9 @@ public class AnswerCallAction extends ActionThread
         {
             mediaProvider.initializeRtpSend(callMgr,
                     this.call.getHandle(),
-                    destIp, destPort, call.getLocalSdpPort());
+                    destIp, destPort, call.getLocalSdpPort(),
+                    mediaSourceType,
+                    mediaFilename);
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }

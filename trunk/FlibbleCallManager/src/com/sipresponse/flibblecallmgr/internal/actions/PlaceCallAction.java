@@ -322,7 +322,9 @@ public class PlaceCallAction extends ActionThread
             mediaProvider.initializeRtpSend(callMgr,
                     this.call.getHandle(),
                     destIp, destPort,
-                    call.getLocalSdpPort());
+                    call.getLocalSdpPort(),
+                    mediaSourceType,
+                    mediaFilename);
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }

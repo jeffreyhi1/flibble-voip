@@ -19,6 +19,7 @@
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
 public class JmfPlugin extends FlibbleMediaProvider
@@ -46,11 +47,16 @@ public class JmfPlugin extends FlibbleMediaProvider
     }
 
     @Override
-    public void initializeRtpSend(CallManager callMgr, String callHandle,
-            String destIp, int destPort, int srcPort)
+    public void initializeRtpSend(CallManager callMgr,
+            String callHandle,
+            String destIp,
+            int destPort,
+            int srcPort,
+            MediaSourceType mediaSourceType,
+            String mediaFilename)
     {
         transmitter = new Transmitter(callMgr, callHandle, destIp, destPort,
-                srcPort);
+                srcPort, mediaSourceType, mediaFilename);
     }
 
     @Override

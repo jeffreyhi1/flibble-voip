@@ -43,6 +43,7 @@ import javax.media.rtp.rtcp.SourceDescription;
 
 import com.ibm.media.codec.audio.PCMToPCM;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sun.media.codec.audio.rc.RateCvrt;
 
@@ -56,15 +57,25 @@ public class Transmitter
     private Processor processor = null;
     private RTPManager rtpMgr;
     private DataSource dataOutput = null;
+    private MediaSourceType mediaSourceType;
+    private String mediaFilename;
+    
 
-    public Transmitter(CallManager callMgr, String callHandle, String destIp,
-            int destPort, int srcPort)
+    public Transmitter(CallManager callMgr,
+            String callHandle,
+            String destIp,
+            int destPort,
+            int srcPort,
+            MediaSourceType mediaSourceType,
+            String mediaFilename)
     {
         this.callMgr = callMgr;
         this.callHandle = callHandle;
         this.destIp = destIp;
         this.destPort = destPort;
         this.srcPort = srcPort;
+        this.mediaSourceType = mediaSourceType;
+        this.mediaFilename = mediaFilename;
         start();
     }
 
@@ -109,16 +120,29 @@ public class Transmitter
 
     private String createProcessor()
     {
-        DataSource ds;
-        DataSource clone;
+        DataSource ds = null;
 
-        try
+        if (mediaSourceType == MediaSourceType.MEDIA_SOURCE_MICROPHONE)
         {
-            ds = javax.media.Manager.createDataSource(new MediaLocator("javasound://8000"));
+            try
+            {
+                ds = javax.media.Manager.createDataSource(new MediaLocator("javasound://8000"));
+            }
+            catch (Exception e)
+            {
+                return "Couldn't create DataSource";
+            }
         }
-        catch (Exception e)
+        if (mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
         {
-            return "Couldn't create DataSource";
+            try
+            {
+                ds = javax.media.Manager.createDataSource(new MediaLocator("file:///" + mediaFilename));
+            }
+            catch (Exception e)
+            {
+                return "Couldn't create DataSource";
+            }
         }
 
         // Try to create a processor to handle the input media locator
