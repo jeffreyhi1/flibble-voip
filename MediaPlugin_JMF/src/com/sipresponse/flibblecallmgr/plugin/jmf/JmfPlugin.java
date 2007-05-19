@@ -53,10 +53,17 @@ public class JmfPlugin extends FlibbleMediaProvider
             int destPort,
             int srcPort,
             MediaSourceType mediaSourceType,
-            String mediaFilename)
+            String mediaFilename,
+            boolean loop)
     {
-        transmitter = new Transmitter(callMgr, callHandle, destIp, destPort,
-                srcPort, mediaSourceType, mediaFilename);
+        transmitter = new Transmitter(callMgr,
+                callHandle,
+                destIp,
+                destPort,
+                srcPort,
+                mediaSourceType,
+                mediaFilename,
+                loop);
     }
 
     @Override

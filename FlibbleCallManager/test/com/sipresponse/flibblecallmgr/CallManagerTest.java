@@ -100,7 +100,7 @@ public class CallManagerTest implements FlibbleListener
         
         String callHandle = callMgr1.createCall(lineHandle1, uriA);
         assertTrue(callHandle != null);
-        callMgr1.placeCall(callHandle, MediaSourceType.MEDIA_SOURCE_DUMMY, null);
+        callMgr1.placeCall(callHandle, MediaSourceType.MEDIA_SOURCE_DUMMY, null, false);
         boolean ret = waitForCallEvent(callHandle, 
                                        EventCode.CALL_CONNECTED,
                                        EventReason.CALL_NORMAL,

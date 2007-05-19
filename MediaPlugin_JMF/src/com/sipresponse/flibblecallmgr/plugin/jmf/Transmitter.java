@@ -26,10 +26,12 @@ import javax.media.Controller;
 import javax.media.ControllerClosedEvent;
 import javax.media.ControllerEvent;
 import javax.media.ControllerListener;
+import javax.media.EndOfMediaEvent;
 import javax.media.Format;
 import javax.media.MediaLocator;
 import javax.media.NoProcessorException;
 import javax.media.Processor;
+import javax.media.Time;
 import javax.media.control.TrackControl;
 import javax.media.format.AudioFormat;
 import javax.media.format.VideoFormat;
@@ -59,7 +61,8 @@ public class Transmitter
     private DataSource dataOutput = null;
     private MediaSourceType mediaSourceType;
     private String mediaFilename;
-    
+    private boolean loop;
+    private DataSource ds;
 
     public Transmitter(CallManager callMgr,
             String callHandle,
@@ -67,7 +70,8 @@ public class Transmitter
             int destPort,
             int srcPort,
             MediaSourceType mediaSourceType,
-            String mediaFilename)
+            String mediaFilename,
+            boolean loop)
     {
         this.callMgr = callMgr;
         this.callHandle = callHandle;
@@ -76,6 +80,7 @@ public class Transmitter
         this.srcPort = srcPort;
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
+        this.loop = loop;
         start();
     }
 
@@ -120,8 +125,6 @@ public class Transmitter
 
     private String createProcessor()
     {
-        DataSource ds = null;
-
         if (mediaSourceType == MediaSourceType.MEDIA_SOURCE_MICROPHONE)
         {
             try
@@ -362,6 +365,18 @@ public class Transmitter
             // to the waiting thread in waitForState method.
             if (ce instanceof ControllerEvent)
             {
+                if (loop == true && ce instanceof EndOfMediaEvent && mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
+                {
+                    processor.setMediaTime(new Time(0));
+                    try
+                    {
+                        processor.start();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
                 synchronized (getStateLock())
                 {
                     getStateLock().notifyAll();
