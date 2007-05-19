@@ -49,13 +49,18 @@ public class AnswerCallAction extends ActionThread
     private int receivePort;
     private FlibbleSipProvider flibbleProvider;
     private FlibbleMediaProvider mediaProvider;
+    private boolean loop;
     
-    public AnswerCallAction(CallManager callMgr, Call call,
-            MediaSourceType mediaSourceType, String mediaFilename)
+    public AnswerCallAction(CallManager callMgr,
+            Call call,
+            MediaSourceType mediaSourceType,
+            String mediaFilename,
+            boolean loop)
     {
         super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
+        this.loop = loop;
         flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
     }
@@ -202,7 +207,8 @@ public class AnswerCallAction extends ActionThread
                     this.call.getHandle(),
                     destIp, destPort, call.getLocalSdpPort(),
                     mediaSourceType,
-                    mediaFilename);
+                    mediaFilename,
+                    loop);
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }

@@ -53,29 +53,29 @@ import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
-import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
 public class PlaceCallAction extends ActionThread
 {
     private int timeout = 60000;
-
     private MediaSourceType mediaSourceType;
-
     private String mediaFilename;
-
     private FlibbleSipProvider flibbleProvider;
-
     private int receivePort;
     private FlibbleMediaProvider mediaProvider;
     private String destIp;
     private int destPort;
+    private boolean loop;
     
-    public PlaceCallAction(CallManager callMgr, Call call,
-            MediaSourceType mediaSourceType, String mediaFilename)
+    public PlaceCallAction(CallManager callMgr,
+            Call call,
+            MediaSourceType mediaSourceType,
+            String mediaFilename,
+            boolean loop)
     {
         super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
+        this.loop = loop;
         flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
     }
@@ -324,7 +324,8 @@ public class PlaceCallAction extends ActionThread
                     destIp, destPort,
                     call.getLocalSdpPort(),
                     mediaSourceType,
-                    mediaFilename);
+                    mediaFilename,
+                    loop);
             mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
         }
     }

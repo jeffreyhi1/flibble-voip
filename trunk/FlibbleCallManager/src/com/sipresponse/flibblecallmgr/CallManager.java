@@ -278,7 +278,9 @@ public class CallManager
      *         FlibbleListener.onEvent.
      */
     public FlibbleResult placeCall(String callHandle,
-            MediaSourceType mediaSourceType, String filename)
+            MediaSourceType mediaSourceType,
+            String filename,
+            boolean loop)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
 
@@ -286,8 +288,11 @@ public class CallManager
                 callHandle);
         if (null != call)
         {
-            PlaceCallAction placeCall = new PlaceCallAction(this, call,
-                    mediaSourceType, filename);
+            PlaceCallAction placeCall = new PlaceCallAction(this,
+                    call,
+                    mediaSourceType,
+                    filename,
+                    loop);
             placeCall.start();
             result = FlibbleResult.RESULT_SUCCESS;
         }
@@ -346,7 +351,8 @@ public class CallManager
      */
     public FlibbleResult answerCall(String callHandle,
             MediaSourceType mediaSourceType,
-            String mediaFilename)
+            String mediaFilename,
+            boolean loop)
     {
         FlibbleResult result = FlibbleResult.RESULT_SUCCESS;
         Call call = InternalCallManager.getInstance().getCallByHandle(
@@ -356,13 +362,13 @@ public class CallManager
             AnswerCallAction answerAction = new AnswerCallAction(this,
                                                                  call,
                                                                  mediaSourceType,
-                                                                 mediaFilename);
+                                                                 mediaFilename, 
+                                                                 loop);
             answerAction.start();
         }
         return result;
     }
     
-
     /**
      * Transfers a currently connected call by sending a REFER message to the
      * remote party.

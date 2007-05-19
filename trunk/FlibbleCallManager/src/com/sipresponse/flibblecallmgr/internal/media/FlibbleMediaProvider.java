@@ -57,7 +57,8 @@ public abstract class FlibbleMediaProvider
                                            int destPort,
                                            int srcPort,
                                            MediaSourceType mediaSourceType,
-                                           String mediaFilename);
+                                           String mediaFilename,
+                                           boolean loop);
     public abstract void startRtpSend(String destIp, int destPort);
     public abstract void stopRtpSend(String destIp, int destPort);
 }

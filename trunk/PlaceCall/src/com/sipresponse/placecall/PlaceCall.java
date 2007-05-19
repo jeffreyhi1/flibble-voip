@@ -107,7 +107,8 @@ public class PlaceCall implements FlibbleListener
                             "sip:mike1@192.168.0.105");
                     callMgr.placeCall(callHandle,
                             MediaSourceType.MEDIA_SOURCE_MICROPHONE,
-                            null);
+                            null,
+                            false);
                 }
             }
         }
