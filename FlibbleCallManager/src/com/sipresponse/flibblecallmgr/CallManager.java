@@ -54,7 +54,6 @@ public class CallManager
     private int mediaPortEnd;
     private String proxyAddress;
     private int proxyPort;
-    boolean enableStun;
     private String stunServer;
     private boolean useSoundCard;
     private String publicIp;
@@ -128,8 +127,14 @@ public class CallManager
         }
         mediaPluginClass = props.getProperty("mediaPluginClass");
 
-        initialize(localIp, udpSipPort, mediaPortStart, mediaPortEnd,
-                proxyAddress, proxyPort, enableStun, stunServer, useSoundCard,
+        initialize(localIp,
+                udpSipPort,
+                mediaPortStart,
+                mediaPortEnd,
+                proxyAddress,
+                proxyPort,
+                stunServer,
+                useSoundCard,
                 mediaPluginClass);
     }
 
@@ -152,17 +157,20 @@ public class CallManager
      *            SIP proxy address or host name.
      * @param proxyPort
      *            Port value for the SIP proxy.
-     * @param enableStun
-     *            Enables discovery of public IP address.
      * @param stunServer
      *            The stun server name or address to be used for STUN discovery.
      * @param useSoundCard
      *            True if the application wishes to use an audio hardware
      *            device. Otherwise, false.
      */
-    public void initialize(String localIp, int udpSipPort, int mediaPortStart,
-            int mediaPortEnd, String proxyAddress, int proxyPort,
-            boolean enableStun, String stunServer, boolean useSoundCard,
+    public void initialize(String localIp,
+            int udpSipPort,
+            int mediaPortStart,
+            int mediaPortEnd,
+            String proxyAddress,
+            int proxyPort,
+            String stunServer,
+            boolean useSoundCard,
             String mediaPluginClass) throws IllegalArgumentException
     {
         this.localIp = localIp;
@@ -171,7 +179,6 @@ public class CallManager
         this.mediaPortEnd = mediaPortEnd;
         this.proxyAddress = proxyAddress;
         this.proxyPort = proxyPort;
-        this.enableStun = enableStun;
         this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
 
@@ -427,11 +434,6 @@ public class CallManager
     public void removeAllListeners()
     {
         InternalCallManager.getInstance().removeAllListeners(this);
-    }
-
-    public boolean isEnableStun()
-    {
-        return enableStun;
     }
 
     public String getLocalIp()
