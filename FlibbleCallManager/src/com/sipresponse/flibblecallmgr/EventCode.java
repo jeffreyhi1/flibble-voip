@@ -43,4 +43,6 @@ public enum EventCode
     LINE_REGISTER_FAILED,
     LINE_PROVISIONED,
     
+    // MEDIA CODES
+    MEDIA_END_OF_FILE,
 }

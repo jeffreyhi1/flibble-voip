@@ -45,33 +45,44 @@ import javax.media.rtp.rtcp.SourceDescription;
 
 import com.ibm.media.codec.audio.PCMToPCM;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
+import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sun.media.codec.audio.rc.RateCvrt;
 
 public class Transmitter
 {
     private CallManager callMgr;
+
     private String callHandle;
+
     private String destIp;
+
     private int destPort;
+
     private int srcPort;
+
     private Processor processor = null;
+
     private RTPManager rtpMgr;
+
     private DataSource dataOutput = null;
+
     private MediaSourceType mediaSourceType;
+
     private String mediaFilename;
+
     private boolean loop;
+
     private DataSource ds;
 
-    public Transmitter(CallManager callMgr,
-            String callHandle,
-            String destIp,
-            int destPort,
-            int srcPort,
-            MediaSourceType mediaSourceType,
-            String mediaFilename,
-            boolean loop)
+    public Transmitter(CallManager callMgr, String callHandle, String destIp,
+            int destPort, int srcPort, MediaSourceType mediaSourceType,
+            String mediaFilename, boolean loop)
     {
         this.callMgr = callMgr;
         this.callHandle = callHandle;
@@ -104,7 +115,7 @@ public class Transmitter
         }
         return result;
     }
-    
+
     /**
      * Stops the transmission if already started
      */
@@ -129,7 +140,8 @@ public class Transmitter
         {
             try
             {
-                ds = javax.media.Manager.createDataSource(new MediaLocator("javasound://8000"));
+                ds = javax.media.Manager.createDataSource(new MediaLocator(
+                        "javasound://8000"));
             }
             catch (Exception e)
             {
@@ -140,7 +152,8 @@ public class Transmitter
         {
             try
             {
-                ds = javax.media.Manager.createDataSource(new MediaLocator("file:///" + mediaFilename));
+                ds = javax.media.Manager.createDataSource(new MediaLocator(
+                        "file:///" + mediaFilename));
             }
             catch (Exception e)
             {
@@ -221,15 +234,15 @@ public class Transmitter
             return "Couldn't set any of the tracks to a valid RTP format";
 
         Codec[] codecs = new Codec[3];
-        com.ibm.media.codec.audio.AudioPacketizer packetizer =  null;
-        
+        com.ibm.media.codec.audio.AudioPacketizer packetizer = null;
+
         packetizer = new com.sun.media.codec.audio.ulaw.Packetizer();
-        ((com.sun.media.codec.audio.ulaw.Packetizer)packetizer).setPacketSize(160);    
-        
-        
+        ((com.sun.media.codec.audio.ulaw.Packetizer) packetizer)
+                .setPacketSize(160);
+
         RateCvrt RateCvrt = new RateCvrt();
         PCMToPCM pcmConvert = new PCMToPCM();
-        
+
         RateCvrt.setInputFormat(new Format(AudioFormat.LINEAR));
         codecs[0] = RateCvrt;
         codecs[1] = pcmConvert;
@@ -252,13 +265,12 @@ public class Transmitter
 
         // Get the output data source of the processor
         dataOutput = processor.getDataOutput();
-        
+
         processor.start();
 
         return null;
     }
 
-    
     /**
      * Use the RTPManager API to create sessions for each media track of the
      * processor.
@@ -281,7 +293,8 @@ public class Transmitter
                 rtpMgr = RTPManager.newInstance();
 
                 // Initialize the RTPManager with the RTPSocketAdapter
-                SendAdapter sendAdapter = new SendAdapter(callMgr, destIp, srcPort, destPort);
+                SendAdapter sendAdapter = new SendAdapter(callMgr, destIp,
+                        srcPort, destPort);
                 rtpMgr.initialize(sendAdapter);
 
                 System.err.println("Created RTP session: " + destIp + " "
@@ -299,10 +312,11 @@ public class Transmitter
 
         return null;
     }
-    
+
     private Integer stateLock = new Integer(0);
+
     private boolean failed = false;
-    
+
     Integer getStateLock()
     {
         return stateLock;
@@ -312,10 +326,10 @@ public class Transmitter
     {
         failed = true;
     }
-    
+
     private synchronized boolean waitForState(Processor p, int state)
     {
-        p.addControllerListener(new StateListener());
+        p.addControllerListener(new StateListener(this));
         failed = false;
 
         // Call the required method on the processor
@@ -351,9 +365,16 @@ public class Transmitter
         else
             return true;
     }
-    
+
     class StateListener implements ControllerListener
     {
+        Transmitter transmitter;
+
+        StateListener(Transmitter transmitter)
+        {
+            this.transmitter = transmitter;
+        }
+
         public void controllerUpdate(ControllerEvent ce)
         {
             // If there was an error during configure or
@@ -365,7 +386,8 @@ public class Transmitter
             // to the waiting thread in waitForState method.
             if (ce instanceof ControllerEvent)
             {
-                if (loop == true && ce instanceof EndOfMediaEvent && mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
+                if (loop == true && ce instanceof EndOfMediaEvent
+                        && mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
                 {
                     processor.setMediaTime(new Time(0));
                     try
@@ -377,6 +399,20 @@ public class Transmitter
                         e.printStackTrace();
                     }
                 }
+                else if (loop == false && ce instanceof EndOfMediaEvent
+                        && mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
+                {
+                    Call call = InternalCallManager.getInstance()
+                            .getCallByHandle(callHandle);
+                    InternalCallManager.getInstance().fireEvent(
+                            transmitter.callMgr,
+                            new Event(EventType.MEDIA,
+                                    EventCode.MEDIA_END_OF_FILE,
+                                    EventReason.MEDIA_NORMAL,
+                                    call.getLineHandle(),
+                                    callHandle,
+                                    mediaFilename));
+                }
                 synchronized (getStateLock())
                 {
                     getStateLock().notifyAll();
@@ -384,5 +420,5 @@ public class Transmitter
             }
         }
     }
-    
+
 }
