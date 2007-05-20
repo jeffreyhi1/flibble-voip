@@ -18,6 +18,9 @@
  ******************************************************************************/
 package com.sipresponse.receivecall;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
@@ -33,16 +36,26 @@ public class ReceiveCall implements FlibbleListener
 
     private void go()
     {
-        callMgr.initialize("192.168.0.203",
-                5060,
-                8000,
-                8020,
-                "sphone.vopr.vonage.net",
-                5061,
-                false,
-                null,
-                true,
-                null);
+        try
+        {
+            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),
+                    5060,
+                    8000,
+                    8020,
+                    "sphone.vopr.vonage.net",
+                    5061,
+                    null,
+                    true,
+                    null);
+        }
+        catch (IllegalArgumentException e1)
+        {
+            e1.printStackTrace();
+        }
+        catch (UnknownHostException e1)
+        {
+            e1.printStackTrace();
+        }
         callMgr.addListener(this);
         
         // create a registered line
@@ -77,7 +90,7 @@ public class ReceiveCall implements FlibbleListener
                 callMgr.acceptCall(callHandle, 180);
                 
                 // answer the call
-                //callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null);
+                //callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
                 String filename = java.lang.System.getProperty("user.home") + "/test.wav";
                 callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, true);
             }

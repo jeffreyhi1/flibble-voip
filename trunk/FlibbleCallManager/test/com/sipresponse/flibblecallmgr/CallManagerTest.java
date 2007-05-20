@@ -135,7 +135,6 @@ public class CallManagerTest implements FlibbleListener
                         9150,
                         proxyAddress,
                         5060,
-                        false,
                         null,
                         false,
                         null);
@@ -156,7 +155,6 @@ public class CallManagerTest implements FlibbleListener
                         9250,
                         proxyAddress,
                         5060,
-                        false,
                         null,
                         false,
                         null);
