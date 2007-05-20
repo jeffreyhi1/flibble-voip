@@ -25,18 +25,34 @@ public class Event
     private EventReason eventReason;
     private String lineHandle;
     private String callHandle;
+    private Object info;
     
     public Event(EventType eventType,
-                 EventCode eventCode,
-                 EventReason eventReason,
-                 String lineHandle,
-                 String callHandle)
+            EventCode eventCode,
+            EventReason eventReason,
+            String lineHandle,
+            String callHandle)
     {
         this.eventType = eventType;
         this.eventCode = eventCode;
         this.eventReason = eventReason;
         this.lineHandle = lineHandle;
         this.callHandle = callHandle;
+    }
+    
+    public Event(EventType eventType,
+                 EventCode eventCode,
+                 EventReason eventReason,
+                 String lineHandle,
+                 String callHandle,
+                 Object info)
+    {
+        this.eventType = eventType;
+        this.eventCode = eventCode;
+        this.eventReason = eventReason;
+        this.lineHandle = lineHandle;
+        this.callHandle = callHandle;
+        this.info = info;
     }
     public EventType getEventType()
     {

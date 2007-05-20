@@ -35,6 +35,9 @@ public enum EventReason
     CALL_DISCONNECT_LOCAL,
     CALL_DISCONNECT_REMOTE,
     
-    // LINE_REASONS
+    // LINE REASONS
     LINE_NORMAL,
+    
+    // MEDIA REAONS
+    MEDIA_NORMAL
 }

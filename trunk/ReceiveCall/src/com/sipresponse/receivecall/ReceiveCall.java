@@ -92,7 +92,16 @@ public class ReceiveCall implements FlibbleListener
                 // answer the call
                 //callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
                 String filename = java.lang.System.getProperty("user.home") + "/test.wav";
-                callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, true);
+                callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, false);
+            }
+        }
+        else if (event.getEventType() == EventType.MEDIA)
+        {
+            if (event.getEventCode() == EventCode.MEDIA_END_OF_FILE)
+            {
+                String filename = java.lang.System.getProperty("user.home") + "/test2.wav";
+                callMgr.changeMediaSource(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, true);
+                
             }
         }
         return false;

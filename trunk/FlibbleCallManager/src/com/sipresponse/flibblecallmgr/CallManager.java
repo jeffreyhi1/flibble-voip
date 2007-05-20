@@ -34,6 +34,7 @@ import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.actions.AcceptCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.AnswerCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
+import com.sipresponse.flibblecallmgr.internal.actions.ChangeMediaAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
@@ -361,7 +362,7 @@ public class CallManager
             String mediaFilename,
             boolean loop)
     {
-        FlibbleResult result = FlibbleResult.RESULT_SUCCESS;
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         Call call = InternalCallManager.getInstance().getCallByHandle(
                 callHandle);
         if (null != call)
@@ -372,10 +373,34 @@ public class CallManager
                                                                  mediaFilename, 
                                                                  loop);
             answerAction.start();
+            result = FlibbleResult.RESULT_SUCCESS;
         }
         return result;
     }
     
+    /**
+     * Changes the media source for a call in progress.
+     */
+    public FlibbleResult changeMediaSource(String callHandle,
+            MediaSourceType mediaSourceType,
+            String mediaFilename,
+            boolean loop)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
+        if (null != call)
+        {
+            ChangeMediaAction changeMediaAction = new ChangeMediaAction(this,
+                                                                 call,
+                                                                 mediaSourceType,
+                                                                 mediaFilename, 
+                                                                 loop);
+            changeMediaAction.start();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;
+    }
     /**
      * Transfers a currently connected call by sending a REFER message to the
      * remote party.
