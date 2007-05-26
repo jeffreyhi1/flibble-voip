@@ -1,17 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <jardesc>
-<jar path="C:/dev/flibble-voip/flibble_0_1_0087-CallMgrOnly-bin.jar"/>
-<options buildIfNeeded="true" compress="true" descriptionLocation="/FlibbleCallManager/bin-CallMgrOnly-jar-export.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
-<storedRefactorings deprecationInfo="true" structuralOnly="false"/>
-<selectedProjects/>
-<manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
-<sealing sealJar="false">
-<packagesToSeal/>
-<packagesToUnSeal/>
-</sealing>
-</manifest>
-<selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-<javaElement handleIdentifier="=FlibbleCallManager/src"/>
-<javaElement handleIdentifier="=FlibbleCallManager/test"/>
-</selectedElements>
+    <jar path="C:/dev/flibble-voip/flibble_0_1_0101-CallMgrOnly-bin.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/FlibbleCallManager/bin-CallMgrOnly-jar-export.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <javaElement handleIdentifier="=FlibbleCallManager/src"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/test"/>
+    </selectedElements>
 </jardesc>
