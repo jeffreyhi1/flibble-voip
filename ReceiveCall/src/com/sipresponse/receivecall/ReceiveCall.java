@@ -59,8 +59,7 @@ public class ReceiveCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "P@ssw0rd");
-        
+        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");        
         while (true)
         {
             try
