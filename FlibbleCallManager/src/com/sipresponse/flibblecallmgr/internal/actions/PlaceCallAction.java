@@ -53,6 +53,7 @@ import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.util.AuthenticationHelper;
 
 public class PlaceCallAction extends ActionThread
 {
@@ -121,9 +122,20 @@ public class PlaceCallAction extends ActionThread
                                         line.getHandle(), call.getHandle()));
                         break;
                     }
-                    else if (statusCode == 401 || statusCode == 403)
+                    else if (statusCode == 401 || statusCode == 403 || statusCode == 407)
                     {
-                        // todo - reinvite with authentication
+                        ct.terminate();
+                        Request inviteWithAuth = createRequest();
+                        AuthenticationHelper.processResponseAuthorization(callMgr,
+                                line,
+                                responseEvent.getResponse(),
+                                inviteWithAuth,
+                                true);
+                        setContent(inviteWithAuth);
+                        ct = flibbleProvider.sendRequest(inviteWithAuth);
+                        responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                        statusCode = responseEvent.getResponse().getStatusCode();
+                        continue;
                     }
                     else if (statusCode > 400)
                     {
