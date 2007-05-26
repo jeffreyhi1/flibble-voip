@@ -44,7 +44,7 @@ public class PlaceCall implements FlibbleListener
                     5060,
                     9300,
                     9400,
-                    "192.168.0.105",
+                    "sphone.vopr.vonage.net",
                     5060,
                     null,
                     true,
@@ -61,8 +61,7 @@ public class PlaceCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:mike2@192.168.0.105", "Foo Bar", true, 300, "P@ssw0rd");
-        
+        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");        
         // or, instead,
         // create a provisioned line, and place the call:
         // 
@@ -120,7 +119,7 @@ public class PlaceCall implements FlibbleListener
                 if (false == inCall)
                 {
                     callHandle = callMgr.createCall(lineHandle,
-                            "sip:mike1@192.168.0.105");
+                            "sip:17815559453@sphone.vopr.vonage.net");
                     callMgr.placeCall(callHandle,
                             MediaSourceType.MEDIA_SOURCE_MICROPHONE,
                             null,
