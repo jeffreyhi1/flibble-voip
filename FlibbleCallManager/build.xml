@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- WARNING: Eclipse auto-generated file.
               Any modifications will be overwritten.
               To include a user specific buildfile here, simply create one in the same
@@ -8,6 +8,7 @@
     <property environment="env"/>
     <property name="MediaPlugin_JMF.location" value="../MediaPlugin_JMF"/>
     <property name="PlaceCall.location" value="../PlaceCall"/>
+    <property name="ReceiveCall.location" value="../ReceiveCall"/>
     <property name="ECLIPSE_HOME" value="../../../Program Files/eclipse"/>
     <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
@@ -23,6 +24,7 @@
         <pathelement location="lib/JainSipRi1.2.jar"/>
         <pathelement location="lib/nist-sdp-1.0.jar"/>
         <pathelement location="lib/sip-sdp.jar"/>
+        <pathelement location="lib/jstun-0.6.1.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -59,6 +61,12 @@
         </ant>
         <ant antfile="${PlaceCall.location}/build.xml" inheritAll="false" target="clean"/>
         <ant antfile="${PlaceCall.location}/build.xml" inheritAll="false" target="build">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
+        <ant antfile="${ReceiveCall.location}/build.xml" inheritAll="false" target="clean"/>
+        <ant antfile="${ReceiveCall.location}/build.xml" inheritAll="false" target="build">
             <propertyset>
                 <propertyref name="build.compiler"/>
             </propertyset>
