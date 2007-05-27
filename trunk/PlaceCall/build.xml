@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- WARNING: Eclipse auto-generated file.
               Any modifications will be overwritten.
               To include a user specific buildfile here, simply create one in the same
@@ -25,6 +25,7 @@
         <pathelement location="${FlibbleCallManager.location}/lib/JainSipRi1.2.jar"/>
         <pathelement location="${FlibbleCallManager.location}/lib/nist-sdp-1.0.jar"/>
         <pathelement location="${FlibbleCallManager.location}/lib/sip-sdp.jar"/>
+        <pathelement location="${FlibbleCallManager.location}/lib/jstun-0.6.1.jar"/>
     </path>
     <path id="PlaceCall.classpath">
         <pathelement location="bin"/>
