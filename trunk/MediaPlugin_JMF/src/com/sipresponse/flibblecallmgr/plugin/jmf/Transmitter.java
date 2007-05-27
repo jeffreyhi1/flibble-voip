@@ -80,6 +80,8 @@ public class Transmitter
 
     private DataSource ds;
 
+    private SendStream sendStream;
+    
     public Transmitter(CallManager callMgr, String callHandle, String destIp,
             int destPort, int srcPort, MediaSourceType mediaSourceType,
             String mediaFilename, boolean loop)
@@ -95,7 +97,7 @@ public class Transmitter
         start();
     }
 
-    public synchronized String start()
+    private synchronized String start()
     {
         String result;
 
@@ -125,10 +127,33 @@ public class Transmitter
         {
             if (processor != null)
             {
+                try
+                {
+                    if (null != ds)
+                    {
+                        ds.stop();
+                    }
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+                try
+                {
+                    if (null != sendStream)
+                    {
+                        sendStream.stop();
+                    }
+                }
+                catch (IOException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 processor.stop();
                 processor.close();
                 processor = null;
-                rtpMgr.removeTargets("Session ended.");
+                rtpMgr.removeTargets("");
                 rtpMgr.dispose();
             }
         }
@@ -165,6 +190,8 @@ public class Transmitter
         try
         {
             processor = javax.media.Manager.createProcessor(ds);
+            processor.addControllerListener(new StateListener(this));
+            
         }
         catch (NoProcessorException npe)
         {
@@ -282,7 +309,6 @@ public class Transmitter
         PushBufferDataSource pbds = (PushBufferDataSource) dataOutput;
         PushBufferStream pbss[] = pbds.getStreams();
 
-        SendStream sendStream;
         int port;
         SourceDescription srcDesList[];
 
@@ -329,7 +355,6 @@ public class Transmitter
 
     private synchronized boolean waitForState(Processor p, int state)
     {
-        p.addControllerListener(new StateListener(this));
         failed = false;
 
         // Call the required method on the processor
@@ -402,6 +427,7 @@ public class Transmitter
                 else if (loop == false && ce instanceof EndOfMediaEvent
                         && mediaSourceType == MediaSourceType.MEDIA_SOURCE_FILE)
                 {
+                    EndOfMediaEvent endOfMedia = (EndOfMediaEvent)ce;
                     Call call = InternalCallManager.getInstance()
                             .getCallByHandle(callHandle);
                     InternalCallManager.getInstance().fireEvent(

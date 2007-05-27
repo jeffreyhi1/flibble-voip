@@ -59,7 +59,7 @@ public class ReceiveCall implements FlibbleListener
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");        
+        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");
         while (true)
         {
             try
@@ -98,6 +98,7 @@ public class ReceiveCall implements FlibbleListener
         {
             if (event.getEventCode() == EventCode.MEDIA_END_OF_FILE)
             {
+                System.err.println("Media End Of File Event Received");
                 String filename = java.lang.System.getProperty("user.home") + "/test2.wav";
                 callMgr.changeMediaSource(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, true);
                 
