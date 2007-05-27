@@ -143,10 +143,11 @@ public class SendAdapter implements RTPConnector
             this.port = port;
         }
 
-        public int write(byte data[], int offset, int len)
+        public int write(byte[] data, int offset, int len)
         {
             try
             {
+                int seqNo = RtpHelper.getSeqNo(data);
                 sock.send(new DatagramPacket(data, offset, len, addr, port));
                 Thread.sleep(15);  //smooth out the inter-arrival jitter
             }
