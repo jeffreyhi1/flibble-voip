@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary How to get started using Flibble-VoIP.  The simple use-case of placing a call from a provisioned line.
 #labels Featured
 
 = Introduction =
