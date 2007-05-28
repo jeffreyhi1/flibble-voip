@@ -1,0 +1,37 @@
+#summary One-sentence summary of this page.
+#labels Featured
+
+= Introduction =
+
+A Simple Code Snippet For Placing Calls
+
+
+= Details =
+
+{{{
+        try
+        {
+            CallMgr callMgr = new CallMgr();
+            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),  // address to bind to
+                    5060, // port to bind to 
+                    9300, // start media port range
+                    9400, // end media port range
+                    "sphone.vopr.vonage.net", // proxy address
+                    5060, // proxy port
+                    null, // stun server
+                    true, // use sound card
+                    null); // media filename
+            callMgr.addListener(this);  // this class implements the FlibbleListener interface
+        }
+        catch (Exception e1)
+        {
+            e1.printStackTrace();
+        }
+        
+        // create a provisioned line, and place the call:
+        // 
+        String lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", false, 0, null);
+        String callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
+        callMgr.placeCall(callHandle);
+
+}}}
