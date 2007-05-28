@@ -18,6 +18,8 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
+import com.sipresponse.flibblecallmgr.DtmfCode;
+
 public class RtpHelper
 {
     public static int getSeqNo(byte[] data)
@@ -25,6 +27,16 @@ public class RtpHelper
         
         int seqNo = byteArrayToInt((byte)0x00, (byte)0x00, data[2], data[3]);
         return seqNo;
+    }
+    
+    public static int getTimestamp(byte[] data)
+    {
+        return byteArrayToInt(data[4], data[5], data[6], data[7]);
+    }
+    
+    public static int getSSID(byte[] data)
+    {
+        return byteArrayToInt(data[8], data[9], data[10], data[11]);
     }
     
     public static int byteArrayToInt(byte b1, byte b2, byte b3, byte b4)
@@ -37,4 +49,40 @@ public class RtpHelper
         return value;
     }
     
+    
+    public static byte[] createDtmfEvent(int payloadId,
+            int seqNo,
+            long timestamp,
+            long ssid,
+            DtmfCode code,
+            boolean marker,
+            boolean end)
+    {
+        byte[] data = new byte[16];
+        data[0] = (byte) 0x80; // version, padding, extension, contributing
+        data[1] = (byte) payloadId;
+        if (true == marker)
+        {
+            data[1] &= (byte)0x80;
+        }
+        data[2] = (byte)((seqNo >> 8) & 0xFF);
+        data[3] = (byte)(seqNo        & 0xFF);
+        
+        // TIMESTAMP
+        data[4] = (byte)((timestamp >> 24)& 0xFF);
+        data[5] = (byte)((timestamp >> 16)& 0xFF); 
+        data[6] = (byte)((timestamp >> 8) & 0xFF); 
+        data[7] = (byte) (timestamp       & 0xFF);
+        
+        // SSID
+        data[8]  = (byte)((ssid >> 24)& 0xFF);
+        data[9]  = (byte)((ssid >> 16)& 0xFF); 
+        data[10] = (byte)((ssid >> 8) & 0xFF); 
+        data[11] = (byte) (ssid       & 0xFF);
+        
+        data[12] = (byte) code.getByte();
+        
+        
+        return data;
+    }
 }
