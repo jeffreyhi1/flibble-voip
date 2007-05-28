@@ -16,7 +16,7 @@ A Simple Code Snippet For Placing Calls
                     5060, // port to bind to 
                     9300, // start media port range
                     9400, // end media port range
-                    "sphone.vopr.vonage.net", // proxy address
+                    "192.168.0.105", // proxy address
                     5060, // proxy port
                     null, // stun server
                     true, // use sound card
