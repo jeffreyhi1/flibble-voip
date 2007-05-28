@@ -30,8 +30,8 @@ A Simple Code Snippet For Placing Calls
         
         // create a provisioned line, and place the call:
         // 
-        String lineHandle = callMgr.addLine("sip:mike4@192.168.0.105", "Foo Bar", false, 0, null);
-        String callHandle = callMgr.createCall(lineHandle, "sip:reliagility@192.168.0.103");
+        String lineHandle = callMgr.addLine("sip:mike1@192.168.0.105", "Foo Bar", false, 0, null);
+        String callHandle = callMgr.createCall(lineHandle, "sip:mike2@192.168.0.105");
         callMgr.placeCall(callHandle);
 
 }}}
