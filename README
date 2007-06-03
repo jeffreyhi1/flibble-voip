@@ -1,0 +1,29 @@
+Flibble- is a high-level Java API for easily creating SIP enabled VoIP applications. Suitable for either a desktop (softphone, attendant console) or server-side (call screening, auto-attendant, ACD) application. Defines a generic media provider interface, and includes an implementation of that interface which uses the Java Media Framework.
+
+What to download:
+
+1. flibbleCallMgr_<version>.jar - Contains the FlibbleCallMgr,
+ which allows you to place and receive calls.
+
+2. flibbleMediaPlugin_JMF_<version>.jar - If your application
+ needs media support (if you plan on using the microphone,
+ speakers, or for streaming .wav files), you will need this
+ default media interface implementation.
+
+3. flibble-depends.zip - These are the libraries which flibble
+ depends on.  You will need these in your runtime classpath.
+
+Examples:
+
+The PlaceCall and ReceiveCall examples are a good place to start.
+
+PlaceCall places an outgoing call to a (currently) hardcoded sip uri.
+It reads loads 2 test .wav files from the user's home directory
+( in Windows, C:\Documents and Settings\YourUsername\, and in Linux /home/YourUsername/),
+and plays them out to the remote endpoint.  The PlaceCall source 
+can be found in the flibblePlaceCallExample_<version>-src.zip file.
+
+ReceiveCall registers with a SIP registrar or proxy, and waits to 
+receive calls, which are automatically answered.
+The ReceiveCall source can be found in the
+flibbleReceiveCallExample_<version>-src.zip file.
