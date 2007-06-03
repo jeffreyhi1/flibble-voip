@@ -38,7 +38,8 @@ public class ReceiveCall implements FlibbleListener
     {
         try
         {
-            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),
+            callMgr.initialize(//InetAddress.getLocalHost().getHostAddress(),
+                    "192.168.0.105",
                     5060,
                     8000,
                     8020,
@@ -48,18 +49,15 @@ public class ReceiveCall implements FlibbleListener
                     true,
                     null);
         }
-        catch (IllegalArgumentException e1)
-        {
-            e1.printStackTrace();
-        }
-        catch (UnknownHostException e1)
+        catch (Exception e1)
         {
             e1.printStackTrace();
         }
         callMgr.addListener(this);
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");
+        lineHandle = callMgr.addLine("sip:17812182814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "_J_9PGVP_9");        
+        //lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "password");
         while (true)
         {
             try
