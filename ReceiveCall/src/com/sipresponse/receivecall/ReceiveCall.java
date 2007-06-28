@@ -38,8 +38,8 @@ public class ReceiveCall implements FlibbleListener
     {
         try
         {
-            callMgr.initialize(//InetAddress.getLocalHost().getHostAddress(),
-                    "192.168.0.105",
+            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),
+                    //"192.168.0.105",
                     5060,
                     8000,
                     8020,
