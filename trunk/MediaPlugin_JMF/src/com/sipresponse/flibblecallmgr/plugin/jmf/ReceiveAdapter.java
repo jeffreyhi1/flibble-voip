@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.BitSet;
 
 import javax.media.protocol.ContentDescriptor;
 import javax.media.protocol.PushSourceStream;
@@ -212,6 +213,11 @@ public class ReceiveAdapter implements RTPConnector
             {
                 return -1;
             }
+            if (true == checkForDtmf(p.getData()))
+            {
+                processDtmfEvent(p.getData());
+                return read(buffer, offset, length);
+            }
             synchronized (this)
             {
                 dataRead = true;
@@ -285,7 +291,6 @@ public class ReceiveAdapter implements RTPConnector
         {
             while (!done)
             {
-
                 synchronized (this)
                 {
                     while (!dataRead && !done)
@@ -307,6 +312,33 @@ public class ReceiveAdapter implements RTPConnector
                 }
             }
         }
+    }
+    
+    private boolean checkForDtmf(byte[] buffer)
+    {
+        boolean ret = false;
+        
+        // assuming that this is an RTP packet, get the payload id
+        // if the payload id is set to DTMF, then this is a DTMF event
+       
+        // the payload type id is in the 2nd byte of the rtp
+        byte payloadType = buffer[1];
+        
+        // do a bitwise-and to remove the first bit of this byte (the marker bit)
+        payloadType &= 0x7F;
+        
+        if (payloadType == 101)  // TODO - although commonly used, 101 is not THE
+                                 //        DTMF payload type.  The payload type is
+                                 //        "dynamic" and negotiated in the SDP
+        {
+            ret = true;
+        }
+        return ret;
+    }
+    
+    private void processDtmfEvent(byte[] buffer)
+    {
+        
     }
     
 }
