@@ -51,18 +51,19 @@ public class Receiver implements ReceiveStreamListener, SessionListener,
     private Player p;
     private ReceiveStream stream;
     
-    public Receiver(CallManager callMgr, String callHandle, String address, int port)
+    public Receiver(CallManager callMgr, String lineHandle, String callHandle, String address, int port)
     {
         rtpMgr = RTPManager.newInstance();
         rtpMgr.addSessionListener(this);
         rtpMgr.addReceiveStreamListener(this);
         this.callHandle = callHandle;
-
         // Initialize the RTPManager with the RTPSocketAdapter
         rtpMgr.initialize(new ReceiveAdapter(
                     callMgr,
                     address, 
-                    port));
+                    port,
+                    lineHandle,
+                    callHandle));
         
         BufferControl bc = (BufferControl)rtpMgr.getControl("javax.media.control.BufferControl");
         if (bc != null)

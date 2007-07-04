@@ -46,6 +46,7 @@ public abstract class FlibbleMediaProvider
     }
     
     public abstract void initializeRtpReceive(CallManager callMgr,
+                                              String lineHandle,
                                               String callHandle,
                                               String address,
                                               int port);

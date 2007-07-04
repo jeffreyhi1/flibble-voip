@@ -100,6 +100,11 @@ public class ReceiveCall implements FlibbleListener
                 callMgr.changeMediaSource(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, true);
                 
             }
+            else if (event.getEventCode() == EventCode.MEDIA_DTMF)
+            {
+                Integer code = (Integer)event.getInfo();
+                System.err.println("DTMF Event Received: " + code);                
+            }
         }
         return false;
     }
