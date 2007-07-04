@@ -102,4 +102,9 @@ public class Event
             eventReason + " line = " + lineHandle + " call = " + callHandle;
         return desc; 
     }
+
+    public Object getInfo()
+    {
+        return info;
+    }
 }

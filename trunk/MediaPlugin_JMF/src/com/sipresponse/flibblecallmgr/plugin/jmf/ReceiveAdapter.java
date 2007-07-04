@@ -30,6 +30,10 @@ import javax.media.protocol.SourceTransferHandler;
 import javax.media.rtp.OutputDataStream;
 import javax.media.rtp.RTPConnector;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 
@@ -52,12 +56,17 @@ public class ReceiveAdapter implements RTPConnector
     DatagramSocket ctrlSock;
 
     InetAddress addr;
-
+    private CallManager callMgr;
+    private String callHandle;
+    private String lineHandle;
     
     public ReceiveAdapter(CallManager callMgr,
                           String address,
-                          int port)
+                          int port,
+                          String lineHandle,
+                          String callHandle)
     {
+        this.callMgr = callMgr;
         this.address = address;
         this.port = port;
         socketMgr = InternalCallManager.getInstance().getMediaSocketManager(callMgr);
@@ -213,9 +222,13 @@ public class ReceiveAdapter implements RTPConnector
             {
                 return -1;
             }
-            if (true == checkForDtmf(p.getData()))
+            if (true == isDtmfEvent(p.getData()))
             {
-                processDtmfEvent(p.getData());
+                if (!isDtmfEnd(p.getData()))
+                {
+                    processDtmfEvent(p.getData());
+                    readUntilDtmfEventEnd(sock, addr, port, buffer, offset, length, 3000);
+                }
                 return read(buffer, offset, length);
             }
             synchronized (this)
@@ -314,7 +327,7 @@ public class ReceiveAdapter implements RTPConnector
         }
     }
     
-    private boolean checkForDtmf(byte[] buffer)
+    private boolean isDtmfEvent(byte[] buffer)
     {
         boolean ret = false;
         
@@ -336,8 +349,67 @@ public class ReceiveAdapter implements RTPConnector
         return ret;
     }
     
+    
+    private boolean isDtmfEnd(byte[] buffer)
+    {
+        boolean ret = false;
+        
+        // check the highest bit of byte 13
+        int endMarkerBit = buffer[13] & 0x80;
+        if (endMarkerBit != 0)
+        {
+            ret = true;
+        }
+        else
+        {
+            ret = false;
+        }
+        return ret;
+    }
+    
+    private void readUntilDtmfEventEnd(DatagramSocket sock,
+            InetAddress addr,
+            int port,
+            byte[] buffer,
+            int offset,
+            int length,
+            int timeout)
+    {
+        long startTime = System.currentTimeMillis();
+        while (true)
+        {
+            DatagramPacket p = new DatagramPacket(buffer, offset, length, addr,
+                    port);
+            try
+            {
+                sock.receive(p);
+            }
+            catch (IOException e)
+            {
+                return;
+            }
+            if (true == isDtmfEvent(p.getData()) && true == isDtmfEnd(p.getData()))
+            {
+                break;
+            }
+            long now = System.currentTimeMillis();
+            if (now - startTime > timeout)
+            {
+                break;
+            }
+        }
+        
+    }
+    
     private void processDtmfEvent(byte[] buffer)
     {
+        int code = buffer[12];
+        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.MEDIA,
+                EventCode.MEDIA_DTMF,
+                EventReason.MEDIA_NORMAL,
+                lineHandle,
+                callHandle,
+                new Integer(code)));
         
     }
     

@@ -45,4 +45,5 @@ public enum EventCode
     
     // MEDIA CODES
     MEDIA_END_OF_FILE,
+    MEDIA_DTMF,
 }

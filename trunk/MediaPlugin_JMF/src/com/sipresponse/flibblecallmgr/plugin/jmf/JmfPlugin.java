@@ -33,10 +33,13 @@ public class JmfPlugin extends FlibbleMediaProvider
     private int srcPort;
     
     @Override
-    public void initializeRtpReceive(CallManager callMgr, String callHandle,
-            String address, int port)
+    public void initializeRtpReceive(CallManager callMgr,
+            String lineHandle,
+            String callHandle,
+            String address,
+            int port)
     {
-        receiver = new Receiver(callMgr, callHandle, address, port);
+        receiver = new Receiver(callMgr, lineHandle, callHandle, address, port);
     }
 
     @Override

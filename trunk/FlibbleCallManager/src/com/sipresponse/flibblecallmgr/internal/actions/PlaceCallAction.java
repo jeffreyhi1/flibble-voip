@@ -316,6 +316,7 @@ public class PlaceCallAction extends ActionThread
             call.setLocalSdpAddress(callMgr.getContactIp());
             call.setLocalSdpPort(receivePort);
             mediaProvider.initializeRtpReceive(callMgr,
+                    this.line.getHandle(),
                     this.call.getHandle(),
                     callMgr.getLocalIp(),
                     receivePort);
