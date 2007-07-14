@@ -82,6 +82,8 @@ public class Transmitter
 
     private SendStream sendStream;
     
+    private SendAdapter sendAdapter;
+    
     public Transmitter(CallManager callMgr, String callHandle, String destIp,
             int destPort, int srcPort, MediaSourceType mediaSourceType,
             String mediaFilename, boolean loop)
@@ -159,6 +161,13 @@ public class Transmitter
         }
     }
 
+    public void sendDtmf(int dtmfCode)
+    {
+        if (null != sendAdapter)
+        {
+            sendAdapter.sendDtmf(dtmfCode);
+        }
+    }
     private String createProcessor()
     {
         if (mediaSourceType == MediaSourceType.MEDIA_SOURCE_MICROPHONE)
@@ -319,7 +328,7 @@ public class Transmitter
                 rtpMgr = RTPManager.newInstance();
 
                 // Initialize the RTPManager with the RTPSocketAdapter
-                SendAdapter sendAdapter = new SendAdapter(callMgr, destIp,
+                sendAdapter = new SendAdapter(callMgr, destIp,
                         srcPort, destPort);
                 rtpMgr.initialize(sendAdapter);
 
