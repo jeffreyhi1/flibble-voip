@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jardesc>
+    <jar path="C:/dev/flibble-voip/flibbleCallMgr_0_1_0122-bin.jar"/>
+    <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/FlibbleCallManager/flibbleflibbleCallMgr-bin.jardesc" useSourceFolders="true" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
+    <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
+    <selectedProjects/>
+    <manifest manifestVersion="1.0" usesManifest="true" reuseManifest="false" saveManifest="false" generateManifest="true" manifestLocation="">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportOutputFolder="false" exportJavaFiles="false">
+        <javaElement handleIdentifier="=FlibbleCallManager/src"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/test"/>
+        <file path="/FlibbleCallManager/build.xml"/>
+        <file path="/FlibbleCallManager/.classpath"/>
+    </selectedElements>
+</jardesc>
