@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="WINDOWS-1252"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <jardesc>
-    <jar path="C:/dev/flibble-voip/flibblePlaceCallExample_0_1_0118-src.zip"/>
+    <jar path="C:/dev/flibble-voip/flibblePlaceCallExample_0_1_0122-src.zip"/>
     <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/FlibbleCallManager/flibblePlaceCallExample-src.jardesc" useSourceFolders="true" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
     <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
     <selectedProjects/>
     <selectedElements exportClassFiles="false" exportOutputFolder="false" exportJavaFiles="true">
-        <file path="/PlaceCall/.classpath"/>
-        <javaElement handleIdentifier="=PlaceCall/src"/>
         <file path="/PlaceCall/build.xml"/>
+        <javaElement handleIdentifier="=PlaceCall/src"/>
+        <file path="/PlaceCall/.classpath"/>
     </selectedElements>
 </jardesc>

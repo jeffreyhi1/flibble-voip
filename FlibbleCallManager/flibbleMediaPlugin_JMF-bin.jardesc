@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="WINDOWS-1252"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <jardesc>
-    <jar path="C:/dev/flibble-voip/flibbleMediaPlugin_JMF_0_1_0118-bin.jar"/>
+    <jar path="C:/dev/flibble-voip/flibbleMediaPlugin_JMF_0_1_0122-bin.jar"/>
     <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/FlibbleCallManager/flibbleMediaPlugin_JMF-bin.jardesc" useSourceFolders="true" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
     <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
     <selectedProjects/>
