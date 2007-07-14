@@ -104,11 +104,6 @@ public class AuthenticationHelper
                 qop = authenticateHeader.getParameter("qop");
             }
 
-            if (qop != null)
-            {
-                // Integer randInt = new Integer(rand.nextInt());
-                // cnonce = randInt.toString();
-            }
 
             String digestResponse = MessageDigestAlgorithm.calculateResponse(
                     "MD5", line.getUser(), realm, line.getPassword(), nonce,
