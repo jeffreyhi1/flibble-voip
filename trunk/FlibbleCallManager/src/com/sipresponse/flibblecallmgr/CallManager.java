@@ -37,6 +37,7 @@ import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ChangeMediaAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 import com.sipresponse.flibblecallmgr.internal.util.StunDiscovery;
 
@@ -434,6 +435,28 @@ public class CallManager
         return result;
     }
 
+    /**
+     * Sends a dtmf event to the remote party of the call.
+     * 
+     * @param callHandle - Handle of the call for the sending of dtmf.
+     * @param dtmfCode - 0-9 for digits 0 to 9, * is 10, # is 11.
+     */
+    public void sendDtmf(String callHandle,
+            int dtmfCode)
+    {
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
+        if (null != call)
+        {
+            FlibbleMediaProvider mediaProvider = call.getMediaProvider();
+            
+            if (null != mediaProvider)
+            {
+                mediaProvider.sendDtmf(dtmfCode);
+            }
+        }
+    }
+    
     /**
      * Sets an object to receive Flibble Events.
      * 

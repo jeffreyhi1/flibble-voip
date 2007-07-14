@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="WINDOWS-1252"?>
 <jardesc>
-    <jar path="C:/dev/flibble-voip/flibbleMediaPlugin_JMF_0_1_0106-src.zip"/>
-    <options buildIfNeeded="true" compress="true" descriptionLocation="/FlibbleCallManager/flibbleMediaPlugin_JMF-src.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="true"/>
-    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <jar path="C:/dev/flibble-voip/flibbleMediaPlugin_JMF_0_1_0118-src.zip"/>
+    <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/FlibbleCallManager/flibbleMediaPlugin_JMF-src.jardesc" useSourceFolders="true" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
+    <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
     <selectedProjects/>
-    <selectedElements exportClassFiles="false" exportJavaFiles="true" exportOutputFolder="false">
-        <file path="/MediaPlugin_JMF/build.xml"/>
+    <selectedElements exportClassFiles="false" exportOutputFolder="false" exportJavaFiles="true">
         <file path="/MediaPlugin_JMF/.classpath"/>
+        <file path="/MediaPlugin_JMF/build.xml"/>
         <javaElement handleIdentifier="=MediaPlugin_JMF/src"/>
     </selectedElements>
 </jardesc>

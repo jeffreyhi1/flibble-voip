@@ -32,6 +32,7 @@ import javax.media.rtp.RTPConnector;
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.internal.media.RtpHelper;
 import com.sipresponse.flibblecallmgr.plugin.jmf.ReceiveAdapter.SocketOutputStream;
 
 public class SendAdapter implements RTPConnector
@@ -44,6 +45,10 @@ public class SendAdapter implements RTPConnector
     private SocketOutputStream rtcpOutputStream;
     private DatagramSocket rtpSocket;
     private DatagramSocket rtcpSocket;
+    private int seqNo;
+    private int dtmfStartSeqNo;
+    private int timestamp;
+    private int ssid;
     
     public SendAdapter(CallManager callMgr,
             String address,
@@ -123,6 +128,14 @@ public class SendAdapter implements RTPConnector
     public void setSendBufferSize(int arg0) throws IOException
     {
     }
+
+    public void sendDtmf(int code)
+    {
+        if (rtpOutputStream != null)
+        {
+            rtpOutputStream.sendDtmf(code);
+        }
+    }
     
     /**
      * An inner class to implement an OutputDataStream based on UDP sockets.
@@ -131,10 +144,9 @@ public class SendAdapter implements RTPConnector
     {
 
         DatagramSocket sock;
-
         InetAddress addr;
-
         int port;
+        private Object sync = new Object();
 
         public SocketOutputStream(DatagramSocket sock, InetAddress addr, int port)
         {
@@ -142,18 +154,71 @@ public class SendAdapter implements RTPConnector
             this.addr = addr;
             this.port = port;
         }
+        
+        public void sendDtmf(int code)
+        {
+            synchronized (sync)
+            {
+                dtmfStartSeqNo = seqNo + 1;
+                byte dtmfEvent[] = null;
+                dtmfEvent = RtpHelper.createDtmfEvent(101,
+                        seqNo + 1, 
+                        timestamp + 160,
+                        ssid,
+                        code,
+                        true,
+                        false);
+                
+                
+                try
+                {
+                    sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                
+                dtmfEvent = RtpHelper.createDtmfEvent(101,
+                        seqNo + 2, 
+                        timestamp + 160,
+                        ssid,
+                        code,
+                        false,
+                        true);  
+                try
+                {
+                    sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                                
+            }
+        }
 
         public int write(byte[] data, int offset, int len)
         {
-            try
+            synchronized (sync)
             {
-                int seqNo = RtpHelper.getSeqNo(data);
-                sock.send(new DatagramPacket(data, offset, len, addr, port));
-                Thread.sleep(15);  //smooth out the inter-arrival jitter
-            }
-            catch (Exception e)
-            {
-                return -1;
+                try
+                {
+                    seqNo = RtpHelper.getSeqNo(data);
+                    if (seqNo <= (dtmfStartSeqNo + 1))
+                    {
+                        return len;
+                    }
+                            
+                    timestamp = RtpHelper.getTimestamp(data);
+                    ssid = RtpHelper.getSSID(data);
+                    sock.send(new DatagramPacket(data, offset, len, addr, port));
+                    Thread.sleep(15);  //smooth out the inter-arrival jitter
+                }
+                catch (Exception e)
+                {
+                    return -1;
+                }
             }
             return len;
         }

@@ -111,4 +111,12 @@ public class JmfPlugin extends FlibbleMediaProvider
         }
     }
 
+    public void sendDtmf(int dtmfCode)
+    {
+        if (null != transmitter)
+        {
+            transmitter.sendDtmf(dtmfCode);
+        }
+    }
+
 }

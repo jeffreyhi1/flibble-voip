@@ -65,4 +65,5 @@ public abstract class FlibbleMediaProvider
     public abstract void changeMediaSource(MediaSourceType mediaSourceType,
                                            String mediaFilename,
                                            boolean loop);
+    public abstract void sendDtmf(int dtmfCode);
 }

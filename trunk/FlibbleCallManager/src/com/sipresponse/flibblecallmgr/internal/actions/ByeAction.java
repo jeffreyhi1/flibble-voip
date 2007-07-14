@@ -20,6 +20,7 @@ package com.sipresponse.flibblecallmgr.internal.actions;
 
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
+import javax.sip.ObjectInUseException;
 import javax.sip.ResponseEvent;
 import javax.sip.SipException;
 import javax.sip.message.Request;
@@ -33,6 +34,7 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.util.AuthenticationHelper;
 
 public class ByeAction extends ActionThread
 {
@@ -89,6 +91,38 @@ public class ByeAction extends ActionThread
 
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
             // response should be 200 ok...
+            if (responseEvent.getResponse().getStatusCode() == 403 ||
+                    responseEvent.getResponse().getStatusCode() == 407    )
+            {
+                // resend with authentication
+
+                try
+                {
+                    ct.terminate();
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                Request byeWithAuth = null;
+                try
+                {
+                    byeWithAuth = dialog.createRequest(Request.BYE);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                AuthenticationHelper.processResponseAuthorization(callMgr,
+                        line,
+                        responseEvent.getResponse(),
+                        byeWithAuth,
+                        true);
+
+                ct = flibbleProvider.sendDialogRequest(dialog, byeWithAuth);
+                responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                
+            }
             
             InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
                     EventCode.CALL_DISCONNECTED,
