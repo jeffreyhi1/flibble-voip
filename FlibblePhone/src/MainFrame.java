@@ -4,6 +4,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.graphics.Color;
 
 public class MainFrame
 {
@@ -40,10 +41,18 @@ public class MainFrame
      */
     private void createSShell()
     {
-        sShell = new Shell();
+        sShell = new Shell(SWT.DIALOG_TRIM);
         sShell.setText("Flibble");
-        sShell.setSize(new Point(177, 275));
+        sShell.setBackground(new Color(Display.getCurrent(), 128, 128, 128));
+        sShell.setSize(new Point(166, 309));
         sShell.setLayout(new GridLayout());
+        sShell.addShellListener(new org.eclipse.swt.events.ShellAdapter()
+        {
+            public void shellClosed(org.eclipse.swt.events.ShellEvent e)
+            {
+                System.exit(0);
+            }
+        });
         new MainForm(sShell, SWT.NONE);
     }
 
