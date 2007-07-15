@@ -28,12 +28,12 @@ import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 public class UserAgent implements FlibbleListener
 {
-    private String proxy = "sphone.vopr.vonage.net";
     private static UserAgent instance;
     private CallManager callMgr = new CallManager();
     private String lineHandle = null;
     private String callHandle = null;        
     private boolean inCall;
+    private boolean notRegisteredYet = true;
     
     public static synchronized UserAgent getInstance()
     {
@@ -46,26 +46,38 @@ public class UserAgent implements FlibbleListener
     
     public void init()
     {
-        try
+        if (Settings.getInstance().existsAndComplete())
         {
-            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),  // address to bind to
-                    5060, // port to bind to 
-                    9300, // start media port range
-                    9400, // end media port range
-                    proxy, // proxy address
-                    5060, // proxy port
-                    null, // stun server
-                    true, // use sound card
-                    null);
+            Settings.getInstance().load();
+            try
+            {
+                callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),  // address to bind to
+                        5060, // port to bind to 
+                        9300, // start media port range
+                        9400, // end media port range
+                        Settings.getInstance().getProxy(), // proxy address
+                        5060, // proxy port
+                        null, // stun server
+                        true, // use sound card
+                        null);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            callMgr.addListener(this);  // this class implements the FlibbleListener interface     
+            
+            // create a registered line
+            lineHandle = callMgr.addLine("sip:" + 
+                                         Settings.getInstance().getUsername() + 
+                                         "@" + 
+                                         Settings.getInstance().getProxy(), 
+                                         "",
+                                         true,
+                                         20,
+                                         Settings.getInstance().getPassword());
+            
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        callMgr.addListener(this);  // this class implements the FlibbleListener interface     
-        
-        // create a registered line
-        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "pwd");
     }
     
     public void onDialPad(int code)
@@ -97,16 +109,25 @@ public class UserAgent implements FlibbleListener
         callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
     }
     
+    public static boolean isDigits(final String word)
+    {
+        for (int index = 0; index < word.length(); index++)
+        {
+            if (Character.isDigit(word.charAt(index)))
+                return true;
+        }
+        return false;
+    }
     public void onCallButtonPressed(String dialString)
     {
         if (null == callHandle)
         {
-            if (dialString.length() == 10)
+            if (isDigits(dialString) && dialString.length() == 10)
             {
                 dialString = "1" + dialString;
             }
             callHandle = callMgr.createCall(lineHandle,
-                    "sip:"+ dialString + "@" + proxy );
+                    "sip:"+ dialString + "@" + Settings.getInstance().getProxy() );
             callMgr.placeCall(callHandle,
                     MediaSourceType.MEDIA_SOURCE_MICROPHONE,
                     null,
@@ -130,12 +151,27 @@ public class UserAgent implements FlibbleListener
         {
             System.err.println("Line Event:  " +  event.getEventCode() + ", " + event.getEventReason());
             
-            // place the call if the line is registered
-            if (event.getEventCode() == EventCode.LINE_REGISTERED)
+            if (event.getEventCode() == EventCode.LINE_REGISTERING)
             {
-                if (false == inCall)
+                if (true == notRegisteredYet)
                 {
+                    MainForm.getInstance().setIncomingCallerId("Logging In.");
                 }
+                
+            }
+            else if (event.getEventCode() == EventCode.LINE_REGISTERED)
+            {
+                
+                if (true == notRegisteredYet)
+                {
+                    MainForm.getInstance().setIncomingCallerId("Logged In.");
+                    notRegisteredYet = false;
+                }
+            }
+            else if (event.getEventCode() == EventCode.LINE_REGISTER_FAILED)
+            {
+                MainForm.getInstance().setIncomingCallerId("Login failed.");
+                notRegisteredYet = true;
             }
         }
         else if (event.getEventType() == EventType.CALL)
@@ -146,6 +182,7 @@ public class UserAgent implements FlibbleListener
                 // accept the call with a 180 ringing
                 callMgr.acceptCall(callHandle, 180);
                 MainForm.getInstance().setIncomingCallerId((String)event.getInfo());
+                MainForm.getInstance().beep();
             }
             else if (event.getEventCode() == EventCode.CALL_CONNECTED)
             {
@@ -154,6 +191,7 @@ public class UserAgent implements FlibbleListener
             else if (event.getEventCode() == EventCode.CALL_FAILED ||
                 event.getEventCode() == EventCode.CALL_DISCONNECTED)
             {
+                MainForm.getInstance().setIncomingCallerId("");
                 inCall = false;
                 callHandle = null;
             }
