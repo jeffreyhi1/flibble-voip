@@ -110,6 +110,7 @@ public class AnswerCallAction extends ActionThread
             {
                 e.printStackTrace();
             }
+            call.setDialog(st.getDialog());
         }
     }
     private void setContent(Response response)

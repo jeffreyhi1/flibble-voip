@@ -23,8 +23,10 @@ import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
+import javax.sip.address.Address;
 import javax.sip.address.SipURI;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.FromHeader;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -40,6 +42,8 @@ import com.sipresponse.flibblecallmgr.internal.LineManager;
 
 public class InviteHandler extends Handler
 {
+   private String callerId;
+   
    public InviteHandler(CallManager callMgr,
             RequestEvent requestEvent)
     {
@@ -52,6 +56,10 @@ public class InviteHandler extends Handler
         SipURI uri = (SipURI) requestEvent.getRequest().getRequestURI();
         String lineHandle = lineMgr.findLineHandle(uri);
         line = lineMgr.getLine(lineHandle);
+        
+        FromHeader fromHeader = (FromHeader)requestEvent.getRequest().getHeader(FromHeader.NAME);
+        Address fromAddress = fromHeader.getAddress();
+        callerId = fromAddress.getDisplayName();
         
         call = new Call(callMgr, lineHandle, uri.toString(), callId);
         call.setLastRequestEvent(requestEvent);
@@ -82,7 +90,8 @@ public class InviteHandler extends Handler
                 EventCode.CALL_INCOMING_INVITE,
                 EventReason.CALL_NORMAL,
                 line.getHandle(),
-                call.getHandle()));
+                call.getHandle(),
+                new String(callerId)));
         
         // if the call is accepted, the
         // AcceptCallAction sends a 180 ringing
