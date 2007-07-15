@@ -65,7 +65,7 @@ public class UserAgent implements FlibbleListener
         callMgr.addListener(this);  // this class implements the FlibbleListener interface     
         
         // create a registered line
-        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "pswd");
+        lineHandle = callMgr.addLine("sip:17815552814@sphone.vopr.vonage.net", "Foo Bar", true, 20, "pwd");
     }
     
     public void onDialPad(int code)
@@ -92,23 +92,36 @@ public class UserAgent implements FlibbleListener
             
     }
 
-    public void placeCall(String dialString)
+    public void answerCall()
     {
-        if (dialString.length() == 10)
+        callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
+    }
+    
+    public void onCallButtonPressed(String dialString)
+    {
+        if (null == callHandle)
         {
-            dialString = "1" + dialString;
+            if (dialString.length() == 10)
+            {
+                dialString = "1" + dialString;
+            }
+            callHandle = callMgr.createCall(lineHandle,
+                    "sip:"+ dialString + "@" + proxy );
+            callMgr.placeCall(callHandle,
+                    MediaSourceType.MEDIA_SOURCE_MICROPHONE,
+                    null,
+                    false);
         }
-        callHandle = callMgr.createCall(lineHandle,
-                "sip:"+ dialString + "@" + proxy );
-        callMgr.placeCall(callHandle,
-                MediaSourceType.MEDIA_SOURCE_MICROPHONE,
-                null,
-                false);
-        
+        else
+        {
+            answerCall();
+        }
     }
     public void bye()
     {
         callMgr.endCall(callHandle);
+        callHandle = null;
+        inCall = false;
     }
     
     public boolean onEvent(Event event)
@@ -127,7 +140,14 @@ public class UserAgent implements FlibbleListener
         }
         else if (event.getEventType() == EventType.CALL)
         {
-            if (event.getEventCode() == EventCode.CALL_CONNECTED)
+            if (event.getEventCode() == EventCode.CALL_INCOMING_INVITE)
+            {
+                callHandle = event.getCallHandle();
+                // accept the call with a 180 ringing
+                callMgr.acceptCall(callHandle, 180);
+                MainForm.getInstance().setIncomingCallerId((String)event.getInfo());
+            }
+            else if (event.getEventCode() == EventCode.CALL_CONNECTED)
             {
                 inCall = true;
             }
@@ -135,6 +155,7 @@ public class UserAgent implements FlibbleListener
                 event.getEventCode() == EventCode.CALL_DISCONNECTED)
             {
                 inCall = false;
+                callHandle = null;
             }
         }
         return false;

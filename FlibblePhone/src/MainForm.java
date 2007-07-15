@@ -68,7 +68,7 @@ public class MainForm extends Composite
         {
             public void widgetSelected(org.eclipse.swt.events.SelectionEvent e)
             {
-                UserAgent.getInstance().placeCall(dialStringCtl.getText());
+                UserAgent.getInstance().onCallButtonPressed(dialStringCtl.getText());
             }
         });
         answer = new Button(this, SWT.NONE);
@@ -104,6 +104,26 @@ public class MainForm extends Composite
     public void addToDialString(String s)
     {
         dialStringCtl.setText(dialStringCtl.getText() + s);
+    }
+    public void setIncomingCallerId(final String callerId)
+    {
+        new Thread(
+                new Runnable()
+                {
+                    public void run()
+                    {
+                          try { Thread.sleep(1000); } catch (Exception e) { }
+                          Display.getDefault().asyncExec(
+                                  new Runnable()
+                                  {
+                                      public void run()
+                                      {
+                                          getShell().forceActive();
+                                          styledText.setText(callerId);
+                                      }
+                                  });
+                    }
+                }).start();        
     }
 
 }  //  @jve:decl-index=0:visual-constraint="12,5"
