@@ -9,7 +9,6 @@ import java.awt.Point;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 
-import org.eclipse.swt.widgets.Display;
 
 import sip.UserAgent;
 import ui.SettingsDialog;
