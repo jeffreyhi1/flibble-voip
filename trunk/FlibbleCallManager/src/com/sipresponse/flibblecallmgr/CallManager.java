@@ -41,6 +41,7 @@ import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 import com.sipresponse.flibblecallmgr.internal.net.ProxyDiscoverer;
 import com.sipresponse.flibblecallmgr.internal.net.StunDiscovery;
+import com.sipresponse.flibblecallmgr.internal.util.HostPort;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
@@ -190,8 +191,8 @@ public class CallManager
         if (localIp.equals(AUTO_DISCOVER))
         {
             ProxyDiscoverer proxyDiscoverer = new ProxyDiscoverer();
-            localIp = proxyDiscoverer.selectBestIpAddress();
-            if (null == localIp)
+            HostPort localHostPort = proxyDiscoverer.selectBestIpAddress(proxyAddress, proxyPort);
+            if (null == localHostPort)
             {
                 return FlibbleResult.RESULT_NETWORK_FAILURE;
             }
