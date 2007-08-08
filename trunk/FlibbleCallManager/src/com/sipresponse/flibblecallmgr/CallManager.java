@@ -39,7 +39,8 @@ import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
-import com.sipresponse.flibblecallmgr.internal.util.StunDiscovery;
+import com.sipresponse.flibblecallmgr.internal.net.ProxyDiscoverer;
+import com.sipresponse.flibblecallmgr.internal.net.StunDiscovery;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
@@ -50,6 +51,7 @@ import com.sipresponse.flibblecallmgr.internal.util.StunDiscovery;
  */
 public class CallManager
 {
+    public static final String AUTO_DISCOVER = "auto";
     private String localIp;
     private int udpSipPort;
     private int mediaPortStart;
@@ -68,12 +70,12 @@ public class CallManager
     {
     }
 
-    public void initialize() throws IOException, IllegalArgumentException
+    public FlibbleResult initialize() throws IOException, IllegalArgumentException
     {
-        initialize(System.getProperty("user.home") + "/" + "flibble.properties");
+        return initialize(System.getProperty("user.home") + "/" + "flibble.properties");
     }
 
-    public void initialize(String filename) throws IOException,
+    public FlibbleResult initialize(String filename) throws IOException,
             IllegalArgumentException
     {
         Properties props = new Properties();
@@ -84,6 +86,7 @@ public class CallManager
         catch (IOException e)
         {
             throw e;
+//          return FlibbleResult.RESULT_IO_FAILURE;
         }
         String localIp = null;
         int udpSipPort = -1;
@@ -129,7 +132,7 @@ public class CallManager
         }
         mediaPluginClass = props.getProperty("mediaPluginClass");
 
-        initialize(localIp,
+        return initialize(localIp,
                 udpSipPort,
                 mediaPortStart,
                 mediaPortEnd,
@@ -165,7 +168,7 @@ public class CallManager
      *            True if the application wishes to use an audio hardware
      *            device. Otherwise, false.
      */
-    public void initialize(String localIp,
+    public FlibbleResult initialize(String localIp,
             int udpSipPort,
             int mediaPortStart,
             int mediaPortEnd,
@@ -183,6 +186,16 @@ public class CallManager
         this.proxyPort = proxyPort;
         this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
+        
+        if (localIp.equals(AUTO_DISCOVER))
+        {
+            ProxyDiscoverer proxyDiscoverer = new ProxyDiscoverer();
+            localIp = proxyDiscoverer.selectBestIpAddress();
+            if (null == localIp)
+            {
+                return FlibbleResult.RESULT_NETWORK_FAILURE;
+            }
+        }
 
         // if the application needs to use a sound card, and no
         // plugin class is given, use JMF
@@ -221,6 +234,7 @@ public class CallManager
                 System.err.println("Found external ip: " + stun.getPublicIp());
             }
         }
+        return FlibbleResult.RESULT_SUCCESS;
     }
 
     /**

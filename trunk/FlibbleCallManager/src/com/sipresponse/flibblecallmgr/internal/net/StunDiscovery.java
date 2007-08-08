@@ -25,13 +25,15 @@
  * or the Apache 2.0 license. Copies of both license agreements are
  * included in the JSTUN distribution.
  */
-package com.sipresponse.flibblecallmgr.internal.util;
+package com.sipresponse.flibblecallmgr.internal.net;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 import de.javawi.jstun.attribute.ChangeRequest;
 import de.javawi.jstun.attribute.ChangedAddress;
