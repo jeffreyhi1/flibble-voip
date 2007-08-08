@@ -1,12 +1,12 @@
 package com.sipresponse.flibblecallmgr.internal.net;
 
-import gov.nist.core.HostPort;
-
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 import java.util.Vector;
+
+import com.sipresponse.flibblecallmgr.internal.util.HostPort;
 
 public class ProxyDiscoverer
 {
