@@ -20,4 +20,12 @@ public class HostPort
     {
         this.port = port;
     }
+    /*
+    public static byte[] stringAddressToByteArray(String s)
+    {
+        byte[] addr = new byte[4];
+        
+        return addr;
+    }
+    */
 }

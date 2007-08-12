@@ -26,6 +26,7 @@ import javax.sip.ResponseEvent;
 public class Signal
 {
     private Semaphore block = null;
+    private Object data = null;
     private ResponseEvent responseEvent;
     public Signal()
     {
@@ -69,5 +70,15 @@ public class Signal
     public void setResponseEvent(ResponseEvent responseEvent)
     {
         this.responseEvent = responseEvent;
+    }
+
+    public Object getData()
+    {
+        return data;
+    }
+
+    public void setData(Object data)
+    {
+        this.data = data;
     }
 }
