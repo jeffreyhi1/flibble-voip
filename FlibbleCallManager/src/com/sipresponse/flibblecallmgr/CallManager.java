@@ -191,11 +191,12 @@ public class CallManager
         if (localIp.equals(AUTO_DISCOVER))
         {
             ProxyDiscoverer proxyDiscoverer = new ProxyDiscoverer();
-            HostPort localHostPort = proxyDiscoverer.selectBestIpAddress(proxyAddress, proxyPort);
+            HostPort localHostPort = proxyDiscoverer.selectBestIpAddress(proxyAddress, proxyPort, udpSipPort);
             if (null == localHostPort)
             {
                 return FlibbleResult.RESULT_NETWORK_FAILURE;
             }
+            udpSipPort = localHostPort.getPort();
         }
 
         // if the application needs to use a sound card, and no
