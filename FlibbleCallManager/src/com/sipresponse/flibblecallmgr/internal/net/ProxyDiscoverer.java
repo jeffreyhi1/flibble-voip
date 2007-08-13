@@ -237,6 +237,8 @@ public class ProxyDiscoverer
                         {
                             signal.setData(hp);
                             signal.notifyResponseEvent();
+                            socket.close();
+                            stop = true;
                         }
                     }
                 }

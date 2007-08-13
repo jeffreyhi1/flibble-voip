@@ -196,7 +196,8 @@ public class CallManager
             {
                 return FlibbleResult.RESULT_NETWORK_FAILURE;
             }
-            udpSipPort = localHostPort.getPort();
+            this.localIp = localHostPort.getHost();
+            this.udpSipPort = localHostPort.getPort();
         }
 
         // if the application needs to use a sound card, and no
