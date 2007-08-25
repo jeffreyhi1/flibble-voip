@@ -61,7 +61,7 @@ public class InviteHandler extends Handler
         Address fromAddress = fromHeader.getAddress();
         callerId = fromAddress.getDisplayName();
         
-        call = new Call(callMgr, lineHandle, uri.toString(), callId);
+        call = new Call(callMgr, lineHandle, uri.toString(), callId, false, fromAddress);
         call.setLastRequestEvent(requestEvent);
     }
 

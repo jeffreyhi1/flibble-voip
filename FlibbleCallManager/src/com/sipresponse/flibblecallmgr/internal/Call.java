@@ -33,6 +33,8 @@ import javax.sdp.Version;
 import javax.sip.Dialog;
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
+import javax.sip.address.Address;
+import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
@@ -58,6 +60,43 @@ public class Call
     private int localSdpPort;
     private RequestEvent lastRequestEvent;
     private ServerTransaction serverTransaction;
+    private boolean fromThisSide;
+    private Address remoteAddress;
+    
+    public Call(CallManager callMgr,
+            String lineHandle,
+            String sipUriString,
+            String callId,
+            boolean fromThisSide,
+            Address remoteAddress)
+    {
+        this.callMgr = callMgr; 
+        this.lineHandle = lineHandle;
+        this.sipUriString = sipUriString;
+        this.callId = callId;
+        this.fromThisSide = fromThisSide;
+        this.remoteAddress = remoteAddress;
+        handle = InternalCallManager.getInstance().getNewHandle();
+        InternalCallManager.getInstance().addCall(handle, this);
+        line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(lineHandle);
+        
+        boolean bUseSoundCard = callMgr.getUseSoundCard();
+
+        if (true == bUseSoundCard)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                    .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
     
     public Event getLastCallEvent()
     {
@@ -135,36 +174,6 @@ public class Call
         }
         return remotePort;
     }
-    public Call(CallManager callMgr,
-            String lineHandle,
-            String sipUriString,
-            String callId)
-    {
-        this.callMgr = callMgr; 
-        this.lineHandle = lineHandle;
-        this.sipUriString = sipUriString;
-        this.callId = callId;
-        handle = InternalCallManager.getInstance().getNewHandle();
-        InternalCallManager.getInstance().addCall(handle, this);
-        line = InternalCallManager.getInstance().getLineManager(callMgr).getLine(lineHandle);
-        
-        boolean bUseSoundCard = callMgr.getUseSoundCard();
-
-        if (true == bUseSoundCard)
-        {
-            String mediaPluginClassName = InternalCallManager.getInstance()
-                    .getMediaPluginClass();
-            try
-            {
-                mediaProvider = (FlibbleMediaProvider) Class.forName(
-                        mediaPluginClassName).newInstance();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-    }
     public String getCallId()
     {
         return callId;
@@ -192,10 +201,6 @@ public class Call
     public String getSipUriString()
     {
         return sipUriString;
-    }
-    public void setSipUriString(String sipUriString)
-    {
-        this.sipUriString = sipUriString;
     }
     public Dialog getDialog()
     {
@@ -316,4 +321,15 @@ public class Call
     {
         this.serverTransaction = serverTransaction;
     }
+
+    public boolean isFromThisSide()
+    {
+        return fromThisSide;
+    }
+
+    public Address getRemoteAddress()
+    {
+        return remoteAddress;
+    }
+
 }

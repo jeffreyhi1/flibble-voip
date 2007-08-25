@@ -21,6 +21,7 @@ package com.sipresponse.flibblecallmgr.internal;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.sipresponse.flibblecallmgr.CallData;
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventType;
@@ -43,6 +44,8 @@ public class InternalCallManager
         new ConcurrentHashMap<String, Call>();
     private ConcurrentHashMap<String, Call> callIdMap = 
         new ConcurrentHashMap<String, Call>();
+    private ConcurrentHashMap<String, CallData> callDataMap = 
+        new ConcurrentHashMap<String, CallData>();
     private int handleCounter = 0;
     private String mediaPluginClass;
     
@@ -155,6 +158,7 @@ public class InternalCallManager
     {
         handleMap.put(handle, call);
         callIdMap.put(call.getCallId(), call);
+        callDataMap.put(handle, new CallData(call));
     }
     
     public Call getCallById(String callId)

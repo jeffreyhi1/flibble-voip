@@ -20,6 +20,7 @@ package com.sipresponse.flibblecallmgr;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -27,6 +28,9 @@ import javax.sip.ListeningPoint;
 import javax.sip.ObjectInUseException;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
+import javax.sip.address.Address;
+import javax.sip.address.SipURI;
+
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
@@ -288,7 +292,17 @@ public class CallManager
     {
         String callId = InternalCallManager.getInstance().getProvider(this).sipProvider
                 .getNewCallId().getCallId();
-        Call call = new Call(this, lineHandle, sipUriString, callId);
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance().getProvider(this);
+        Address sipAddress = null;
+        try
+        {
+            sipAddress = flibbleProvider.addressFactory.createAddress(sipUriString);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        Call call = new Call(this, lineHandle, sipUriString, callId, true, sipAddress);
         String callHandle = call.getHandle();
         return callHandle;
     }
