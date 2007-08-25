@@ -21,6 +21,7 @@ package com.sipresponse.flibblecallmgr;
 public enum EventCode
 {
     // CALL CODES
+    CALL_IDLE,
     CALL_TRYING,
     CALL_INCOMING_INVITE,
     CALL_REMOTE_RINGING,

@@ -30,11 +30,18 @@ public class CallData
     }
     public String getRemoteNumber()
     {
-        return ((SipURI)call.getRemoteAddress().getURI()).getUser();
+        Address remoteAddress = call.getRemoteAddress();
+        SipURI remoteUri = (SipURI) remoteAddress.getURI();
+        String remoteNumber = remoteUri.getUser();
+        return remoteNumber;
     }
     public String getRemoteName()
     {
-        return getRemoteAddress().getDisplayName();
+        Address remoteAddress = call.getRemoteAddress();
+        String displayName = remoteAddress.getDisplayName();
+        
+        System.err.println("Remote Name: " + displayName);
+        return displayName;
     }
     public Address getRemoteAddress()
     {

@@ -549,6 +549,12 @@ public class CallManager
     {
         return useSoundCard;
     }
+    
+    public CallData getCallData(String callHandle)
+    {
+        CallData callData = new CallData(InternalCallManager.getInstance().getCallByHandle(callHandle));
+        return callData;
+    }
 
     /**
      * Tears down this call manager.
