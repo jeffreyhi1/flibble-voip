@@ -171,9 +171,17 @@ public class InternalCallManager
         return handleMap.get(callHandle);
     }
     
+    public CallData getCallData(String callHandle)
+    {
+        return callDataMap.get(callHandle);
+    }
+    
     public void removeCallByHandle(String callHandle)
     {
+        Call call = handleMap.get(callHandle);
         handleMap.remove(callHandle);
+        callIdMap.remove(call.getCallId());
+        callDataMap.remove(callHandle);
     }
     
     public synchronized String getNewHandle()

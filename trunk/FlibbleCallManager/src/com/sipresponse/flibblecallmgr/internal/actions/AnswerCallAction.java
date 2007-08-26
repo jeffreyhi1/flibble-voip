@@ -31,6 +31,10 @@ import javax.sip.header.ContentTypeHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
@@ -87,6 +91,15 @@ public class AnswerCallAction extends ActionThread
             send(response);
             startMediaSend();
             startMediaReceive();
+            InternalCallManager.getInstance()
+                .fireEvent(
+                    this.callMgr,
+                    new Event(EventType.CALL,
+                            EventCode.CALL_CONNECTED,
+                            EventReason.CALL_NORMAL, line
+                                    .getHandle(), call
+                                    .getHandle()));
+            
         }
         catch (Exception e)
         {
