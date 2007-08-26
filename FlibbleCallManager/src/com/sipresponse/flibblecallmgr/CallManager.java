@@ -552,7 +552,7 @@ public class CallManager
     
     public CallData getCallData(String callHandle)
     {
-        CallData callData = new CallData(InternalCallManager.getInstance().getCallByHandle(callHandle));
+        CallData callData = InternalCallManager.getInstance().getCallData(callHandle);
         return callData;
     }
 
