@@ -20,7 +20,6 @@ package com.sipresponse.flibblecallmgr;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -29,7 +28,6 @@ import javax.sip.ObjectInUseException;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
 import javax.sip.address.Address;
-import javax.sip.address.SipURI;
 
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
@@ -39,6 +37,7 @@ import com.sipresponse.flibblecallmgr.internal.actions.AcceptCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.AnswerCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ChangeMediaAction;
+import com.sipresponse.flibblecallmgr.internal.actions.HoldAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
@@ -431,6 +430,30 @@ public class CallManager
             changeMediaAction.start();
             result = FlibbleResult.RESULT_SUCCESS;
         }
+        return result;
+    }
+    
+    /**
+     * holdCall - puts the remote party on hold.
+     * 
+     * @param callHandle Call handle of the call to be put on hold.
+     * @param hold - True for hold, false for unhold.
+     * @return RESULT_SUCCESS or other for failure
+     */
+    public FlibbleResult holdCall(String callHandle,
+            boolean hold)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
+        if (null != call)
+        {
+            HoldAction holdAction = new HoldAction(this,
+                                                   call,
+                                                   hold);
+            holdAction.start();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }        
         return result;
     }
     /**
