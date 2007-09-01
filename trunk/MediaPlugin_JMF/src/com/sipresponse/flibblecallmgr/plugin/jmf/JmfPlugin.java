@@ -31,6 +31,9 @@ public class JmfPlugin extends FlibbleMediaProvider
     private String destIp;
     private int destPort;
     private int srcPort;
+    private MediaSourceType mediaSourceType;
+    private String mediaFilename;
+    private boolean loop;
     
     @Override
     public void initializeRtpReceive(CallManager callMgr,
@@ -68,6 +71,9 @@ public class JmfPlugin extends FlibbleMediaProvider
         this.destIp = destIp;
         this.destPort = destPort;
         this.srcPort = srcPort;
+        this.mediaSourceType = mediaSourceType;
+        this.mediaFilename = mediaFilename;
+        this.loop = loop;
         transmitter = new Transmitter(callMgr,
                 callHandle,
                 destIp,
@@ -81,6 +87,17 @@ public class JmfPlugin extends FlibbleMediaProvider
     @Override
     public void startRtpSend(String destIp, int destPort)
     {
+        if (transmitter == null)
+        {
+            transmitter = new Transmitter(callMgr,
+                    callHandle,
+                    destIp,
+                    destPort,
+                    srcPort,
+                    mediaSourceType, 
+                    mediaFilename,
+                    loop);
+        }
     }
 
     @Override
@@ -89,6 +106,7 @@ public class JmfPlugin extends FlibbleMediaProvider
         if (transmitter != null)
         {
             transmitter.stop();
+            transmitter = null;
         }
     }
 
@@ -98,6 +116,9 @@ public class JmfPlugin extends FlibbleMediaProvider
     {
         if (null != transmitter)
         {
+            this.mediaSourceType = mediaSourceType;
+            this.mediaFilename = mediaFilename;
+            this.loop = loop;
             transmitter.stop();
             transmitter = new Transmitter(callMgr,
                     callHandle,
