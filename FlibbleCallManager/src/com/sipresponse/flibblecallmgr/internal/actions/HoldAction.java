@@ -26,6 +26,9 @@ import javax.sdp.SessionDescription;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
+import javax.sip.address.Address;
+import javax.sip.address.SipURI;
+import javax.sip.header.ContactHeader;
 import javax.sip.header.ContentLengthHeader;
 import javax.sip.header.ContentTypeHeader;
 import javax.sip.message.Request;
@@ -39,6 +42,8 @@ import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.LineManager;
 
 public class HoldAction extends ActionThread
 {
@@ -66,11 +71,22 @@ public class HoldAction extends ActionThread
         try
         {
             reinvite = dialog.createRequest(Request.INVITE);
+            LineManager lineMgr = InternalCallManager.getInstance().getLineManager(
+                    callMgr);            Line fromLine = lineMgr.getLine(call.getLineHandle());
+            String fromUser = fromLine.getUser();
+            SipURI contactUri = flibbleProvider.addressFactory.createSipURI(
+                    fromUser, callMgr.getContactIp());
+            Address contactAddress = flibbleProvider.addressFactory
+                    .createAddress(contactUri);
+            ((SipURI) contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
+            ContactHeader contactHeader = flibbleProvider.headerFactory
+                    .createContactHeader(contactAddress);            
+            reinvite.setHeader(contactHeader);
             // create a _copy_ of the sdp
             SessionDescription localSdp =(SessionDescription) SdpFactory.getInstance().createSessionDescription(call.getLocalSdp().toString());
             if (true == hold)
             {
-                localSdp.getOrigin().setAddress("0.0.0.0");
+                //localSdp.getOrigin().setAddress("0.0.0.0");
                 localSdp.getConnection().setAddress("0.0.0.0");
             }
             ContentTypeHeader contentTypeHeader = null;
