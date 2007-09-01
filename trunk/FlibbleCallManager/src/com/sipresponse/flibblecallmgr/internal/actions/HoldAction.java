@@ -66,7 +66,7 @@ public class HoldAction extends ActionThread
         {
             reinvite = dialog.createRequest(Request.INVITE);
             // create a _copy_ of the sdp
-            SessionDescription localSdp = SdpFactory.getInstance().createSessionDescription(call.getLocalSdp());
+            SessionDescription localSdp =(SessionDescription) SdpFactory.getInstance().createSessionDescription(call.getLocalSdp().toString());
             if (true == hold)
             {
                 localSdp.getOrigin().setAddress("0.0.0.0");
@@ -88,6 +88,8 @@ public class HoldAction extends ActionThread
             reinvite.setHeader(contentLengthHeader);
             try
             {
+                System.err.println("doHold - setting content:");
+                System.err.println(localSdp.toString());
                 reinvite.setContent(localSdp.toString(), contentTypeHeader);
             }
             catch (ParseException e)
@@ -117,13 +119,26 @@ public class HoldAction extends ActionThread
                     responseEvent.getResponse() != null &&
                     (responseEvent.getResponse().getStatusCode() % 100) == 2)
             {
-                InternalCallManager.getInstance().fireEvent(
-                        this.callMgr,
-                        new Event(EventType.CALL,
-                                EventCode.CALL_HOLDING_REMOTE_PARTY,
-                                EventReason.CALL_NORMAL,
-                                line.getHandle(),
-                                call.getHandle()));
+                if (hold == true)
+                {
+                    InternalCallManager.getInstance().fireEvent(
+                            this.callMgr,
+                            new Event(EventType.CALL,
+                                    EventCode.CALL_HOLDING_REMOTE_PARTY,
+                                    EventReason.CALL_NORMAL,
+                                    line.getHandle(),
+                                    call.getHandle()));
+                }
+                else
+                {
+                    InternalCallManager.getInstance().fireEvent(
+                            this.callMgr,
+                            new Event(EventType.CALL,
+                                    EventCode.CALL_CONNECTED,
+                                    EventReason.CALL_UNHOLD,
+                                    line.getHandle(),
+                                    call.getHandle()));
+                }
             }
             else
             {
