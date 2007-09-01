@@ -18,6 +18,9 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.plugin.jmf;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
@@ -138,6 +141,21 @@ public class JmfPlugin extends FlibbleMediaProvider
         {
             transmitter.sendDtmf(dtmfCode);
         }
+    }
+
+    public void playFileLocally(URL url)
+    {
+        java.applet.AudioClip clip = null;
+        try
+        {
+            clip = java.applet.Applet.newAudioClip(url);
+        }
+        catch (Exception e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        clip.play( );
     }
 
 }

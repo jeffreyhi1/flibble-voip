@@ -19,6 +19,8 @@
 
 package com.sipresponse.flibblecallmgr.internal.media;
 
+import java.net.URL;
+
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 
@@ -65,5 +67,6 @@ public abstract class FlibbleMediaProvider
     public abstract void changeMediaSource(MediaSourceType mediaSourceType,
                                            String mediaFilename,
                                            boolean loop);
+    public abstract void playFileLocally(URL url);
     public abstract void sendDtmf(int dtmfCode);
 }
