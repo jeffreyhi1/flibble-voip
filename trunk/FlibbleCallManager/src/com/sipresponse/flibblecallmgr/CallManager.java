@@ -20,6 +20,7 @@ package com.sipresponse.flibblecallmgr;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -432,6 +433,20 @@ public class CallManager
         }
         return result;
     }
+    
+    public FlibbleResult playFileLocally(String callHandle, URL url)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+
+        Call call = InternalCallManager.getInstance().getCallByHandle(
+                callHandle);
+        if (null != call)
+        {
+            call.getMediaProvider().playFileLocally(url);
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;
+    }    
     
     /**
      * holdCall - puts the remote party on hold.
