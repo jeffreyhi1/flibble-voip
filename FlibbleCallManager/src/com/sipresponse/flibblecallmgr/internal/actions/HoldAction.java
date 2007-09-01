@@ -21,6 +21,7 @@ package com.sipresponse.flibblecallmgr.internal.actions;
 import java.text.ParseException;
 
 import javax.sdp.SdpFactory;
+import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
@@ -114,13 +115,24 @@ public class HoldAction extends ActionThread
             }
             ResponseEvent responseEvent = flibbleProvider
                     .waitForResponseEvent(ct);
-            // response should be 200 
+            while (responseEvent.getResponse().getStatusCode() < 200)
+            {
+                responseEvent = flibbleProvider
+                    .waitForResponseEvent(ct);
+            }
+            // response should be 200
             if (responseEvent != null &&
                     responseEvent.getResponse() != null &&
-                    (responseEvent.getResponse().getStatusCode() % 100) == 2)
+                    (responseEvent.getResponse().getStatusCode()<400 ))
             {
+                System.err.println("Acking hold/unhold response");
+                flibbleProvider.ackResponse(responseEvent);
+                
                 if (hold == true)
                 {
+                    String remoteSdpIp = call.getRemoteSdpAddress();
+                    int remoteSdpPort = call.getRemoteSdpPort();
+                    call.getMediaProvider().stopRtpSend(remoteSdpIp, remoteSdpPort);
                     InternalCallManager.getInstance().fireEvent(
                             this.callMgr,
                             new Event(EventType.CALL,
@@ -131,6 +143,26 @@ public class HoldAction extends ActionThread
                 }
                 else
                 {
+                    SessionDescription remoteSdp = null;
+                    if (null != responseEvent.getResponse().getRawContent())
+                    {
+                        try
+                        {
+                            remoteSdp = SdpFactory.getInstance().createSessionDescription(new String(responseEvent.getResponse().getRawContent()));
+                        }
+                        catch (SdpParseException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        if (null != remoteSdp)
+                        {
+                            call.setRemoteSdp(remoteSdp);
+                        }
+                    }
+                    String remoteSdpIp = null;
+                    remoteSdpIp = call.getRemoteSdpAddress();
+                    int remoteSdpPort = call.getRemoteSdpPort();
+                    call.getMediaProvider().startRtpSend(remoteSdpIp, remoteSdpPort);
                     InternalCallManager.getInstance().fireEvent(
                             this.callMgr,
                             new Event(EventType.CALL,
@@ -142,13 +174,15 @@ public class HoldAction extends ActionThread
             }
             else
             {
+                System.err.println("Acking hold/unhold response");
+                flibbleProvider.ackResponse(responseEvent);
                 InternalCallManager.getInstance().fireEvent(this.callMgr, 
                         new Event(EventType.CALL,
                                   EventCode.CALL_HOLD_FAILED,
                                   EventReason.CALL_FAILURE_REJECTED,
                                   line.getHandle(),
                                   call.getHandle()));
-                }
+            }
         }
     }
 }
