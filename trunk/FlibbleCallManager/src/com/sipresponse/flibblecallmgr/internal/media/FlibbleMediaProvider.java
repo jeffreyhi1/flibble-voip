@@ -67,6 +67,7 @@ public abstract class FlibbleMediaProvider
     public abstract void changeMediaSource(MediaSourceType mediaSourceType,
                                            String mediaFilename,
                                            boolean loop);
-    public abstract void playFileLocally(URL url);
+    public abstract void playFileLocally(URL url, boolean loop);
+    public abstract void stopFileLocally();
     public abstract void sendDtmf(int dtmfCode);
 }

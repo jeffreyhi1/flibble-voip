@@ -442,7 +442,7 @@ public class CallManager
                 callHandle);
         if (null != call)
         {
-            call.getMediaProvider().playFileLocally(url);
+            call.getMediaProvider().playFileLocally(url, true);
             result = FlibbleResult.RESULT_SUCCESS;
         }
         return result;

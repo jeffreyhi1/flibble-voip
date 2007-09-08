@@ -158,7 +158,13 @@ public class PlaceCallAction extends ActionThread
                     }
                     else if (statusCode == 183 || statusCode == 180)
                     {
-                        // todo - fire a remote ringing event
+                        InternalCallManager.getInstance().fireEvent(
+                                this.callMgr,
+                                new Event(EventType.CALL,
+                                        EventCode.CALL_REMOTE_RINGING,
+                                        EventReason.CALL_NORMAL,
+                                        line.getHandle(),
+                                        call.getHandle()));
                         responseEvent = flibbleProvider
                                 .waitForResponseEvent(ct);
                     }
