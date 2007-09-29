@@ -443,6 +443,12 @@ public class FlibbleSipProvider implements SipListener
 
             request.addHeader(contactHeader);
 
+            if (requestMethod.equalsIgnoreCase(Request.REGISTER))
+            {
+                request.setRequestURI(addressFactory.createURI("sip:" + toUri.getHost()));
+            }
+
+            
             return request;
         }
         catch (Exception ex)
