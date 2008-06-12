@@ -26,6 +26,7 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
+import com.sipresponse.flibblecallmgr.FlibbleResult;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 public class ReceiveCall implements FlibbleListener
@@ -38,16 +39,18 @@ public class ReceiveCall implements FlibbleListener
     {
         try
         {
-            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),
-                    //"192.168.0.105",
-                    5060,
-                    8000,
-                    8020,
-                    "sphone.vopr.vonage.net",
-                    5061,
-                    null,
+            String ipAddressToUse = CallManager.AUTO_DISCOVER;
+            FlibbleResult res = callMgr.initialize(ipAddressToUse,
+                    5060,// port to bind to 
+                    8000,// start media port range
+                    8020,// end media port range
+                    "sphone.vopr.vonage.net",// domain
+                    "sphone.vopr.vonage.net",// proxy address
+                    5061,// proxy port
+                    null,// stun server
+                    "Flibble UA",
                     true,
-                    null);
+                    null);        	
         }
         catch (Exception e1)
         {
@@ -88,7 +91,12 @@ public class ReceiveCall implements FlibbleListener
                 // answer the call
                 //callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
                 String filename = java.lang.System.getProperty("user.home") + "/test.wav";
-                callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_FILE, filename, false);
+                callMgr.answerCall(callHandle,
+                		MediaSourceType.MEDIA_SOURCE_FILE,
+                		filename,
+                		false,
+                		50,
+                		50);
             }
         }
         else if (event.getEventType() == EventType.MEDIA)

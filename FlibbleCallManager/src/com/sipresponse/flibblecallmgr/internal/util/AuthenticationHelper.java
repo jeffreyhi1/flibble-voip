@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -18,13 +18,20 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.util;
 
-import javax.sip.header.AuthorizationHeader;
+import gov.nist.javax.sip.header.SIPHeader;
+
+
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.Header;
 import javax.sip.header.ProxyAuthenticateHeader;
-import javax.sip.header.ProxyAuthorizationHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScheme;
+import org.apache.commons.httpclient.auth.AuthenticationException;
+import org.apache.commons.httpclient.auth.DigestScheme;
+import org.apache.commons.httpclient.auth.MalformedChallengeException;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
@@ -39,127 +46,70 @@ public class AuthenticationHelper
             Response response,
             Request newRequest, boolean forRegister)
     {
+        String headerName = "Authorization";
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
+                WWWAuthenticateHeader wwwAuthenticateHeader = (WWWAuthenticateHeader) response
+                        .getHeader(WWWAuthenticateHeader.NAME);
+        SIPHeader sipHeader = (SIPHeader) wwwAuthenticateHeader;
+        
+        if (sipHeader == null)
+        {
+            headerName = "Proxy-Authorization";
+            ProxyAuthenticateHeader proxyAuthenticateHeader = (ProxyAuthenticateHeader)
+                response.getHeader(ProxyAuthenticateHeader.NAME);
+            sipHeader = (SIPHeader) proxyAuthenticateHeader;
+        }
+        CSeqHeader cseqHeader = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
+        String method = cseqHeader.getMethod();
 
         System.out.println("processResponseAuthorization()");
         // Proxy-Authorization header:
-        ProxyAuthenticateHeader authenticateHeader = (ProxyAuthenticateHeader) response
-                .getHeader(ProxyAuthenticateHeader.NAME);
-
-        WWWAuthenticateHeader wwwAuthenticateHeader = null;
-        CSeqHeader cseqHeader = (CSeqHeader) response
-                .getHeader(CSeqHeader.NAME);
-
-        String cnonce = null;
-        String uri = null;
         
-        if (forRegister == true)
+        
+         UsernamePasswordCredentials cred =
+             new UsernamePasswordCredentials(line.getUser(), line.getPassword());
+
+         AuthScheme authscheme = new DigestScheme();
+         try
         {
-            uri = "sip:" + line.getHost(); 
+            authscheme.processChallenge(sipHeader.getHeaderValue());
         }
-        else
+        catch (MalformedChallengeException e)
         {
-            uri = line.getSipUri().toString();
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        String method = cseqHeader.getMethod();
-        String nonce = null;
-        String realm = null;
-        String qop = null;
-        String nonceCount = "00000001";
-        String opaque = null;
+         
+        String uriString = null;
+//        if (forRegister == true)
+//        {
+//            uriString = "sip:" + line.getHost(); 
+//        }
+//        else
+        {
+            uriString = newRequest.getRequestURI().toString();
+        }
+         String responseString = null;
+        try
+        {
+            responseString = authscheme.authenticate(cred, method, uriString);
+        }
+        catch (AuthenticationException e)
+        {
+            e.printStackTrace();
+        }
 
         try
         {
-            if (authenticateHeader == null)
-            {
-                wwwAuthenticateHeader = (WWWAuthenticateHeader) response
-                        .getHeader(WWWAuthenticateHeader.NAME);
-
-                nonce = wwwAuthenticateHeader.getNonce();
-                realm = wwwAuthenticateHeader.getRealm();
-                if (realm == null)
-                {
-                    System.out
-                            .println("AuthenticationProcess, getProxyAuthorizationHeader(),"
-                                    + " ERROR: the realm is not part of the 401 response!");
-                    return;
-                }
-                cnonce = wwwAuthenticateHeader.getParameter("cnonce");
-                qop = wwwAuthenticateHeader.getParameter("qop");
-                opaque = wwwAuthenticateHeader.getParameter("opaque");
-            }
-            else
-            {
-                nonce = authenticateHeader.getNonce();
-                realm = authenticateHeader.getRealm();
-                if (realm == null)
-                {
-                    System.out
-                            .println("AuthenticationProcess, getProxyAuthorizationHeader(),"
-                                    + " ERROR: the realm is not part of the 407 response!");
-                    return;
-                }
-                cnonce = authenticateHeader.getParameter("cnonce");
-                qop = authenticateHeader.getParameter("qop");
-            }
-
-
-            String digestResponse = MessageDigestAlgorithm.calculateResponse(
-                    "MD5", line.getUser(), realm, line.getPassword(), nonce,
-                    nonceCount, cnonce, method, uri, null, qop);
-
-            if (authenticateHeader == null)
-            {
-                AuthorizationHeader header = flibbleProvider.headerFactory
-                        .createAuthorizationHeader("Digest");
-                header.setParameter("username", line.getUser());
-                header.setParameter("realm", realm);
-                if (null != opaque)
-                {
-                    header.setParameter("opaque", opaque);
-                }
-                if (qop != null)
-                {
-                    header.setParameter("qop", qop);
-                    if (null != cnonce)
-                    {
-                        header.setParameter("cnonce", cnonce);
-                        header.setParameter("nc", nonceCount);
-                    }
-                }
-                header.setParameter("algorithm", "MD5");
-                header.setParameter("uri", uri);
-                // header.setParameter("opaque","");
-                header.setParameter("nonce", nonce);
-                header.setParameter("response", digestResponse);
-
-                newRequest.setHeader(header);
-            }
-            else
-            {
-                ProxyAuthorizationHeader header = flibbleProvider.headerFactory
-                        .createProxyAuthorizationHeader("Digest");
-                header.setParameter("username", line.getUser());
-                header.setParameter("realm", realm);
-                if (qop != null)
-                {
-                    header.setParameter("qop", qop);
-                    header.setParameter("cnonce", cnonce);
-                    header.setParameter("nc", "00000001");
-                }
-                header.setParameter("algorithm", "MD5");
-                header.setParameter("uri", uri);
-                header.setParameter("nonce", nonce);
-                header.setParameter("response", digestResponse);
-
-                newRequest.setHeader(header);
-            }
+                Header header = flibbleProvider.headerFactory.createHeader(headerName, responseString);
+                newRequest.addHeader(header);
         }
         catch (Exception e)
         {
             e.printStackTrace();
-        }
+        }        
+        
     }
 
 }

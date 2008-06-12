@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -39,6 +39,7 @@ import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
+import com.sipresponse.flibblecallmgr.internal.util.StringUtil;
 
 public class InviteHandler extends Handler
 {
@@ -59,7 +60,13 @@ public class InviteHandler extends Handler
         
         FromHeader fromHeader = (FromHeader)requestEvent.getRequest().getHeader(FromHeader.NAME);
         Address fromAddress = fromHeader.getAddress();
+        SipURI fromURI = (SipURI) fromAddress.getURI();
         callerId = fromAddress.getDisplayName();
+        if (!StringUtil.hasDigits(callerId))
+        {
+            callerId += " " + StringUtil.stripAllButNumbers(fromURI.getUser(), true);
+        }
+         
         
         call = new Call(callMgr, lineHandle, uri.toString(), callId, false, fromAddress);
         call.setLastRequestEvent(requestEvent);
@@ -68,6 +75,9 @@ public class InviteHandler extends Handler
     @Override
     public void execute()
     {
+        // send out a 100 trying
+        sendResponse(Response.TRYING);
+        
         // create the call object
        // set the call's remote SDP
        String content = new String(requestEvent.getRequest().getRawContent());
@@ -81,9 +91,6 @@ public class InviteHandler extends Handler
            e.printStackTrace();
        }
        call.setRemoteSdp(remoteSdp);
-        
-        // send out a 100 trying
-        //sendResponse(100);
         
         // fire an INCOMING INVITE event
         InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,

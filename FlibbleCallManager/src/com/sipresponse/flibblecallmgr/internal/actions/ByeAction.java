@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -23,6 +23,7 @@ import javax.sip.Dialog;
 import javax.sip.ObjectInUseException;
 import javax.sip.ResponseEvent;
 import javax.sip.SipException;
+import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -60,6 +61,11 @@ public class ByeAction extends ActionThread
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
             .getProvider(callMgr);
         FlibbleMediaProvider mediaProvider = call.getMediaProvider();
+        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                EventCode.CALL_DISCONNECTED,
+                EventReason.CALL_DISCONNECT_LOCAL,
+                line.getHandle(),
+                call.getHandle()));
         if (null != mediaProvider)
         {
             mediaProvider.stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
@@ -71,8 +77,10 @@ public class ByeAction extends ActionThread
         try
         {
             bye = dialog.createRequest(Request.BYE);
+            ViaHeader viaHeader = (ViaHeader)bye.getHeader(ViaHeader.NAME);
+            viaHeader.setRPort();            
         }
-        catch (SipException e)
+        catch (Exception e)
         {
             e.printStackTrace();
         }
@@ -90,8 +98,11 @@ public class ByeAction extends ActionThread
             }
 
             ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+            try
+            {
             // response should be 200 ok...
-            if (responseEvent.getResponse().getStatusCode() == 403 ||
+            if (responseEvent != null && responseEvent.getResponse() != null &&
+                    responseEvent.getResponse().getStatusCode() == 403 ||
                     responseEvent.getResponse().getStatusCode() == 407    )
             {
                 // resend with authentication
@@ -123,13 +134,11 @@ public class ByeAction extends ActionThread
                 responseEvent = flibbleProvider.waitForResponseEvent(ct);
                 
             }
-            
-            InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
-                    EventCode.CALL_DISCONNECTED,
-                    EventReason.CALL_DISCONNECT_LOCAL,
-                    line.getHandle(),
-                    call.getHandle()));
-            
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
             // remove call from internal call manager
             InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
         }

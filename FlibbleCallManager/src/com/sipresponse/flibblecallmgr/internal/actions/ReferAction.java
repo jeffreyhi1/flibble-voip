@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -24,6 +24,7 @@ import javax.sip.ResponseEvent;
 import javax.sip.TransactionUnavailableException;
 import javax.sip.address.Address;
 import javax.sip.header.ReferToHeader;
+import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -76,6 +77,9 @@ public class ReferAction extends ActionThread
         try
         {
             refer = dialog.createRequest(Request.REFER);
+            ViaHeader viaHeader = (ViaHeader)refer.getHeader(ViaHeader.NAME);
+            viaHeader.setRPort();            
+            
             referToAddress = flibbleProvider.addressFactory.createAddress(targetUri);
             referToHeader = flibbleProvider.headerFactory.createReferToHeader(referToAddress);
             refer.setHeader(referToHeader);

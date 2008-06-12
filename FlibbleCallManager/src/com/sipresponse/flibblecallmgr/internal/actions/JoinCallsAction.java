@@ -18,16 +18,38 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.actions;
 
+
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.Call;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
-public class ReinviteAction extends ActionThread
+public class JoinCallsAction extends ActionThread
 {
-
-    protected ReinviteAction(CallManager callMgr, Call call)
+    private Call[] calls;
+    public JoinCallsAction(CallManager callMgr,
+            Call[] calls)
     {
-        super(callMgr, call, null);
-        // TODO Auto-generated constructor stub
+        super(callMgr, null, null);
+        this.calls = calls;
     }
 
+    public void run()
+    {
+        try
+        {
+            for (Call c : calls)
+            {
+                if (null != c)
+                {
+                    FlibbleMediaProvider provider = c.getMediaProvider();
+                    provider.joinOtherCallsWithDataSource(c, calls);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -19,6 +19,11 @@
 package com.sipresponse.flibblecallmgr.internal.actions;
 
 
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
 import gov.nist.javax.sip.Utils;
 import javax.sip.ClientTransaction;
 import javax.sip.InvalidArgumentException;
@@ -26,9 +31,12 @@ import javax.sip.ObjectInUseException;
 import javax.sip.ResponseEvent;
 import javax.sip.header.AuthorizationHeader;
 import javax.sip.header.CSeqHeader;
+import javax.sip.header.ContactHeader;
 import javax.sip.header.ExpiresHeader;
 import javax.sip.header.ProxyAuthenticateHeader;
 import javax.sip.header.ProxyAuthorizationHeader;
+import javax.sip.header.UserAgentHeader;
+import javax.sip.header.ViaHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -65,6 +73,11 @@ public class RegisterAction extends ActionThread
             // create the transaction
             ClientTransaction ct = flibbleProvider.sendRequest(register);
 
+            if (ct == null)
+            {
+                line.setStatus(EventCode.LINE_REGISTER_FAILED, EventReason.LINE_NETWORK);
+                return;            
+            }
             // wait for a response
             ResponseEvent responseEvent = flibbleProvider
                     .waitForResponseEvent(ct);
@@ -108,6 +121,24 @@ public class RegisterAction extends ActionThread
                 }
                 if (response != null && response.getStatusCode() == 200)
                 {
+                    if (line.getRegisterPeriod() < 0)
+                    {
+                        if (null != response.getExpires() &&
+                            response.getExpires().getExpires() > 0)
+                        {
+                           ExpiresHeader expiresHeader = response.getExpires();
+                           line.setRegisterPeriod(expiresHeader.getExpires());                        
+                        }
+                        else
+                        {
+                            ContactHeader contactHeader = (ContactHeader)response.getHeader(ContactHeader.NAME);
+                            if (null != contactHeader &&
+                                contactHeader.getExpires() > 0)
+                            {
+                                line.setRegisterPeriod(contactHeader.getExpires());
+                            }
+                        }
+                    }
                     line.setLastRegisterTimestamp(System.currentTimeMillis());
                     line.setStatus(EventCode.LINE_REGISTERED, EventReason.LINE_NORMAL);
                 }
@@ -132,14 +163,32 @@ public class RegisterAction extends ActionThread
                 .generateCallIdentifier(callMgr.getLocalIp()),
                 Request.REGISTER, line.getSipUri(), line.getSipUri());
         ExpiresHeader expiresHeader = null;
+        UserAgentHeader uaHeader = null;
+        
+        Vector<String> uaList = new Vector<String>();
+        uaList.add(callMgr.getUserAgent());
         try
         {
-            expiresHeader = flibbleProvider.headerFactory
-                    .createExpiresHeader(line.getRegisterPeriod());
+            uaHeader = flibbleProvider.headerFactory.createUserAgentHeader(uaList);
+        }
+        catch (ParseException e1)
+        {
+            e1.printStackTrace();
+        }
+        if (null != uaHeader)
+        {
+            register.addHeader(uaHeader);
+        }
+        try
+        {
+            if (line.getRegisterPeriod() > 0)
+            {
+                expiresHeader = flibbleProvider.headerFactory
+                        .createExpiresHeader(line.getRegisterPeriod());
+            }
         }
         catch (InvalidArgumentException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -147,7 +196,30 @@ public class RegisterAction extends ActionThread
         {
             register.setExpires(expiresHeader);
         }
-
+        // add via headers
+        try
+        {
+            ViaHeader viaHeader = null;
+            if (callMgr.getPublicIp() != null)
+            {
+                 viaHeader = flibbleProvider.headerFactory
+                .createViaHeader(callMgr.getPublicIp(), flibbleProvider.sipProvider
+                        .getListeningPoint("udp").getPort(), "udp", null);
+            }
+             else
+             {
+             
+                viaHeader = flibbleProvider.headerFactory
+                        .createViaHeader(callMgr.getLocalIp(), flibbleProvider.sipProvider
+                                .getListeningPoint("udp").getPort(), "udp", null);
+             }
+            viaHeader.setRPort();
+            register.setHeader(viaHeader);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
         return register;
     }
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -33,7 +33,6 @@ import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 import com.sipresponse.flibblecallmgr.internal.media.RtpHelper;
-import com.sipresponse.flibblecallmgr.plugin.jmf.ReceiveAdapter.SocketOutputStream;
 
 public class SendAdapter implements RTPConnector
 {
@@ -63,6 +62,7 @@ public class SendAdapter implements RTPConnector
     
     public void close()
     {
+        rtpOutputStream.close();
     }
 
     public PushSourceStream getControlInputStream() throws IOException
@@ -103,12 +103,12 @@ public class SendAdapter implements RTPConnector
 
     public double getRTCPBandwidthFraction()
     {
-        return 0;
+        return 0.0;
     }
 
     public double getRTCPSenderBandwidthFraction()
     {
-        return 0;
+        return 0.0;
     }
 
     public int getReceiveBufferSize()
@@ -136,6 +136,10 @@ public class SendAdapter implements RTPConnector
             rtpOutputStream.sendDtmf(code);
         }
     }
+    private long now()
+    {
+        return System.nanoTime() / 1000000;
+    }
     
     /**
      * An inner class to implement an OutputDataStream based on UDP sockets.
@@ -147,12 +151,20 @@ public class SendAdapter implements RTPConnector
         InetAddress addr;
         int port;
         private Object sync = new Object();
-
+        private long lastTimeSent = now();
         public SocketOutputStream(DatagramSocket sock, InetAddress addr, int port)
         {
             this.sock = sock;
             this.addr = addr;
             this.port = port;
+        }
+        
+        public void close()
+        {
+            if (null != sock)
+            {
+                sock.close();
+            }
         }
         
         public void sendDtmf(int code)
@@ -168,8 +180,21 @@ public class SendAdapter implements RTPConnector
                         code,
                         true,
                         false);
-                
-                
+                try
+                {
+                    sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                dtmfEvent = RtpHelper.createDtmfEvent(101,
+                        seqNo + 2, 
+                        timestamp + 320,
+                        ssid,
+                        code,
+                        true,
+                        false);
                 try
                 {
                     sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
@@ -180,8 +205,8 @@ public class SendAdapter implements RTPConnector
                 }
                 
                 dtmfEvent = RtpHelper.createDtmfEvent(101,
-                        seqNo + 2, 
-                        timestamp + 160,
+                        seqNo + 3, 
+                        timestamp + 480,
                         ssid,
                         code,
                         false,
@@ -194,31 +219,64 @@ public class SendAdapter implements RTPConnector
                 {
                     e.printStackTrace();
                 }
-                                
+                dtmfEvent = RtpHelper.createDtmfEvent(101,
+                        seqNo + 3, 
+                        timestamp + 480,
+                        ssid,
+                        code,
+                        false,
+                        true);  
+                try
+                {
+                    sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                try
+                {
+                    sock.send(new DatagramPacket(dtmfEvent, 0, dtmfEvent.length, addr, port));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
             }
         }
 
         public int write(byte[] data, int offset, int len)
         {
-            synchronized (sync)
+            try
             {
-                try
+                seqNo = RtpHelper.getSeqNo(data);
+                if (seqNo <= (dtmfStartSeqNo + 1))
                 {
-                    seqNo = RtpHelper.getSeqNo(data);
-                    if (seqNo <= (dtmfStartSeqNo + 1))
+                    return len;
+                }
+                        
+                timestamp = RtpHelper.getTimestamp(data);
+                ssid = RtpHelper.getSSID(data);
+                sock.send(new DatagramPacket(data, offset, len, addr, port));
+                // smooth it out
+                if (now() - lastTimeSent < 18)
+                {
+                    try
                     {
-                        return len;
+                        long sleepTime = 1;
+                        sleepTime = Math.max(1, 18 - (now() - lastTimeSent));                    
+                        Thread.sleep(sleepTime);
                     }
-                            
-                    timestamp = RtpHelper.getTimestamp(data);
-                    ssid = RtpHelper.getSSID(data);
-                    sock.send(new DatagramPacket(data, offset, len, addr, port));
-                    Thread.sleep(15);  //smooth out the inter-arrival jitter
+                    catch (InterruptedException e)
+                    {
+                        return -1;
+                    }
                 }
-                catch (Exception e)
-                {
-                    return -1;
-                }
+                lastTimeSent = now();
+            }
+            catch (Exception e)
+            {
+                return -1;
             }
             return len;
         }

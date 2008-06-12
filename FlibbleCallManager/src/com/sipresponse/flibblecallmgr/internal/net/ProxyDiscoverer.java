@@ -29,36 +29,49 @@ public class ProxyDiscoverer
         new Vector<HostPort>();
     private String proxyAddress;
     private int proxyPort;
+    private String domain;
     private Signal signal = new Signal();
     
     public HostPort selectBestIpAddress(String proxyAddress,
+                                        String domain,
                                         int proxyPort,
-                                        int desiredLocalPort)
+                                        int desiredLocalPort,
+                                        boolean bStun)
     {
         this.proxyAddress = proxyAddress;
         this.proxyPort = proxyPort;
+        this.domain = domain;
         HostPort bestHostPort = null;
         String ipAddress = null;
         Vector<String> ipAddresses = getAllIpAddresses();
-        
+     
         // For each IP, create a udp server for discovery
         for (int i = 0; i < ipAddresses.size(); i++)
         {
-            // create a udp server for discovery
-            createDiscoveryServer(ipAddresses.get(i), desiredLocalPort);
+            HostPort hp = new HostPort(ipAddresses.get(i), desiredLocalPort);
+            hostPortMap.put(ipAddresses.get(i), hp);
+            hostPortVector.add(hp);
         }
         
         // send probes from all IP addresses, waiting
         // for a response on each of the discovery servers
+        boolean couldSend = false;
         for (HostPort hp : hostPortVector)
         {
             // create a udp server for discovery
-            sendProbe(hp);
+            sendProbe(hp, bStun);
         }
         
         // wait for the first response
         bestHostPort = waitForProbeResponse();
-        
+    
+        Enumeration enumeration = serverMap.elements();
+        while (enumeration.hasMoreElements())
+        {
+            DiscoveryUdpServer server = (DiscoveryUdpServer) enumeration.nextElement();
+            server.close();
+        }
+            
         return bestHostPort;
     }
     
@@ -95,7 +108,7 @@ public class ProxyDiscoverer
         return addressVector;
     }
 
-    private void createDiscoveryServer(String localAddress,
+    private DiscoveryUdpServer createDiscoveryServer(String localAddress,
                                         int localPort)
     {
         DiscoveryUdpServer server = new DiscoveryUdpServer(localAddress, localPort);
@@ -105,26 +118,47 @@ public class ProxyDiscoverer
             if (null != hp)
             {
                 serverMap.put(localAddress, server);
-                hostPortMap.put(localAddress, hp);
-                hostPortVector.add(hp);
             }
             
         }
+        return server;
     }
     
-    private void sendProbe(HostPort hp)
+    private boolean sendProbe(final HostPort localHp, final boolean bStun)
     {
-        String optionsMsg = 
-            "OPTIONS sip:bob@" + proxyAddress + ":" + proxyPort + " SIP/2.0\r\n" +
-            "Via: SIP/2.0/UDP " + hp.getHost() + ":" + hp.getPort() + "\r\n" +
-            "From: Alice <sip:alice@wonderland.com>;tag=abc\r\n" + 
-            "To: Bob <sip:bob@"+  proxyAddress + ":" + proxyPort +">\r\n" +
-            "Call-ID: 123Flibble\r\n\r\n";
-        DiscoveryUdpServer server = serverMap.get(hp.getHost());
-        if (null != server)
+        new Thread()
         {
-            server.send(optionsMsg);
-        }
+            public void run()
+            {
+                System.err.println("Sending Probe " + localHp.getHost() + " " + localHp.getPort());
+                HostPort hpToUse = localHp;
+                if (bStun == true)
+                {
+                    try
+                    {
+                        hpToUse = StunDiscovery.getInstance().discoverPublicIp(localHp.getHost(), localHp.getPort(), null);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }               
+                DiscoveryUdpServer server = createDiscoveryServer(localHp.getHost(), localHp.getPort());
+                if (null != server)
+                {
+                    String optionsMsg = 
+                        "INFO sip:" + domain + " SIP/2.0\r\n" +
+                        "Via: SIP/2.0/UDP " + hpToUse.getHost() + ":" + hpToUse.getPort() + ";branch=z9hg4Ka113eabcdefabcdef" + System.currentTimeMillis() + "\r\n" +
+                        "CSeq: 1 INFO\r\n" +      
+                        "From: Alice <sip:Alice@"+  domain +">;tag=1348\r\n" +
+                        "To: Bob <sip:bob@"+  domain +">\r\n" +
+                        "Contact: <sip:alice@" + server.localIp + ":" + server.socket.getLocalPort() +">\r\n" +
+                        "Call-ID: 123Flibble\r\n\r\n";
+                    server.send(optionsMsg);
+                }
+            }
+        }.start();
+        return true;
     }
     
     private HostPort waitForProbeResponse()
@@ -140,9 +174,9 @@ public class ProxyDiscoverer
     
     private class DiscoveryUdpServer extends Thread
     {
-        private DatagramSocket socket;
+        public DatagramSocket socket;
         private HostPort hp = null;
-        private String localIp;
+        public String localIp;
         private int requestedPort;
         private boolean started = false;
         private boolean stop = false;

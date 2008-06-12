@@ -1,55 +1,49 @@
-/*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
- *
- *      mike _AT_ sipresponse.com
- *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *  
- * CODE IN THIS FILE IS A WORK DERIVED FROM "JSTUN": 
- * 
- * JSTUN Copyright (c) 2005 Thomas King <king@t-king.de> - All rights
- * reserved.
- * 
- * JSTUN is licensed under either the GNU Public License (GPL),
- * or the Apache 2.0 license. Copies of both license agreements are
- * included in the JSTUN distribution.
- */
 package com.sipresponse.flibblecallmgr.internal.net;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import java.util.Enumeration;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.java.stun4j.StunAddress;
+import net.java.stun4j.client.NetworkConfigurationDiscoveryProcess;
+import net.java.stun4j.client.StunDiscoveryReport;
+
+import com.sipresponse.flibblecallmgr.internal.util.HostPort;
 import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
-import de.javawi.jstun.attribute.ChangeRequest;
-import de.javawi.jstun.attribute.ChangedAddress;
-import de.javawi.jstun.attribute.ErrorCode;
-import de.javawi.jstun.attribute.MappedAddress;
-import de.javawi.jstun.attribute.MessageAttribute;
-import de.javawi.jstun.header.MessageHeader;
-import de.javawi.jstun.test.DiscoveryInfo;
 
 public class StunDiscovery
 {
-    private int timeoutInitValue = 8000;
-    private boolean nodeNatted;
-    private String publicIp;
+    private static StunDiscovery instance;
+    ConcurrentHashMap<HostPort,HostPort> privateToPublicMap = new ConcurrentHashMap<HostPort,HostPort>();
+    private String stunServer;
+    private int stunServerPort;
+    public static synchronized StunDiscovery getInstance()
+    {
+        if (null == instance)
+        {
+            instance = new StunDiscovery();
+        }
+        return instance;
+    }
+    private StunDiscovery()
+    {
+    }
     
-    public Signal discoverPublicIpAsync(final String stunServer, final String ip, final int port)
+    public void removeBinding(HostPort privateHostPort)
+    {
+        HostPort removedGuy = privateToPublicMap.remove(privateHostPort);
+        if (null == removedGuy)
+        {
+            System.err.println("no binding removed: " + privateHostPort.toString());
+            dumpBindings();
+        }
+        else
+        {
+            System.err.println("removed binding: " + privateHostPort.toString());
+        }
+    }
+    public Signal discoverPublicIpAsync(final String ip, final int privatePort)
     {
         final Signal signal = new Signal();
         new Thread() 
@@ -58,7 +52,7 @@ public class StunDiscovery
             {
                 try
                 {
-                    discoverPublicIp(stunServer, ip, port, signal);
+                    discoverPublicIp(ip, privatePort, signal);
                 }
                 catch (Exception e)
                 {
@@ -70,138 +64,76 @@ public class StunDiscovery
         return signal;
     }
     
-    public boolean discoverPublicIp(String stunServer, String ip, int port, Signal doneSignal) throws Exception
+    public HostPort discoverPublicIp(String ip, int privatePort, Signal doneSignal) throws Exception
     {
-        if (port < 1)
+        HostPort publicHostPort = null;
+        if (stunServerPort < 1)
         {
-            port = 3478;
+            stunServerPort = 3478;
         }
-        DiscoveryInfo di = new DiscoveryInfo(InetAddress.getByName(ip));
-        DatagramSocket sock;
-        int timeSinceFirstTransmission = 0;
-        int timeout = timeoutInitValue;
-        while (true)
+        HostPort privateHostPort = new HostPort(ip, privatePort);
+        // first, check in our map
+        publicHostPort = privateToPublicMap.get(privateHostPort);
+        if (publicHostPort != null)
         {
-            try
+            return publicHostPort;
+        }
+        publicHostPort = new HostPort();
+        try
+        {
+            StunAddress localAddr = new StunAddress(ip, privatePort); 
+
+
+            StunAddress serverAddr = new StunAddress(stunServer, stunServerPort);
+            NetworkConfigurationDiscoveryProcess addressDiscovery =
+                new NetworkConfigurationDiscoveryProcess( 
+                            localAddr, serverAddr);
+
+            addressDiscovery.start();
+
+            StunDiscoveryReport stunReport = addressDiscovery.determineAddress(); 
+            
+            StunAddress stunAddress = stunReport.getPublicAddress();
+            
+            publicHostPort.setHost(InetAddress.getByAddress(stunAddress.getAddressBytes()).getHostAddress());
+            publicHostPort.setPort(stunAddress.getPort());
+            privateToPublicMap.put(privateHostPort, publicHostPort);
+
+            addressDiscovery.shutDown();
+            if (null != doneSignal)
             {
-                sock = new DatagramSocket(new InetSocketAddress(ip, 0));
-                sock.setReuseAddress(true);
-                sock.connect(InetAddress.getByName(stunServer), port);
-                sock.setSoTimeout(timeout);
-
-                MessageHeader sendMH = new MessageHeader(
-                        MessageHeader.MessageHeaderType.BindingRequest);
-                sendMH.generateTransactionID();
-
-                ChangeRequest changeRequest = new ChangeRequest();
-                sendMH.addMessageAttribute(changeRequest);
-
-                byte[] data = sendMH.getBytes();
-                DatagramPacket send = new DatagramPacket(data, data.length);
-                sock.send(send);
-                // Binding Request sent
-
-                MessageHeader receiveMH = new MessageHeader();
-                while (!(receiveMH.equalTransactionID(sendMH)))
-                {
-                    DatagramPacket receive = new DatagramPacket(new byte[200],
-                            200);
-                    sock.receive(receive);
-                    receiveMH = MessageHeader.parseHeader(receive.getData());
-                }
-
-                MappedAddress ma = (MappedAddress) receiveMH
-                        .getMessageAttribute(MessageAttribute.MessageAttributeType.MappedAddress);
-                ChangedAddress ca = (ChangedAddress) receiveMH
-                        .getMessageAttribute(MessageAttribute.MessageAttributeType.ChangedAddress);
-                ErrorCode ec = (ErrorCode) receiveMH
-                        .getMessageAttribute(MessageAttribute.MessageAttributeType.ErrorCode);
-                if (ec != null)
-                {
-                    di.setError(ec.getResponseCode(), ec.getReason());
-                    // Message header contains errorcode message attribute.
-                    if (null != doneSignal)
-                    {
-                        doneSignal.notifyResponseEvent();
-                    }
-                    return false;
-                }
-                if ((ma == null) || (ca == null))
-                {
-                    di
-                            .setError(
-                                    700,
-                                    "The server is sending incomplete response (Mapped Address and Changed Address message attributes are missing). The client should not retry.");
-                    // Response does not contain a mapped address or changed
-                    // address message attribute.
-                    if (null != doneSignal)
-                    {
-                        doneSignal.notifyResponseEvent();
-                    }
-                    return false;
-                }
-                else
-                {
-                    di.setPublicIP(ma.getAddress().getInetAddress());
-                    if ((ma.getPort() == sock.getLocalPort())
-                            && (ma.getAddress().getInetAddress().equals(sock
-                                    .getLocalAddress())))
-                    {
-                        // Node is not natted.
-                        nodeNatted = false;
-                    }
-                    else
-                    {
-                        publicIp = di.getPublicIP().getHostAddress();
-                        nodeNatted = true;
-                        // Node is natted
-                    }
-                    if (null != doneSignal)
-                    {
-                        doneSignal.notifyResponseEvent();
-                    }
-                    return true;
-                }
+                doneSignal.notifyResponseEvent();
             }
-            catch (SocketTimeoutException ste)
+            return publicHostPort;
+        }
+        catch (Exception ste)
+        {
+            ste.printStackTrace();
+            if (null != doneSignal)
             {
-                if (timeSinceFirstTransmission < 7900)
-                {
-                    //  Socket timeout while receiving the response.
-                    timeSinceFirstTransmission += timeout;
-                    int timeoutAddValue = (timeSinceFirstTransmission * 2);
-                    if (timeoutAddValue > 1600)
-                        timeoutAddValue = 1600;
-                    timeout = timeoutAddValue;
-                }
-                else
-                {
-                    // node is not capable of udp communication
-                    // Socket timeout while receiving the response. Maximum retry limit exceed. Give up.
-                    di.setBlockedUDP();
-                    // Node is not capable of udp communication.
-                    if (null != doneSignal)
-                    {
-                        doneSignal.notifyResponseEvent();
-                    }
-                    return false;
-                }
+                doneSignal.notifyResponseEvent();
             }
+            return publicHostPort;
+        }
+    }
+    public void setStunServer(String stunServer)
+    {
+        this.stunServer = stunServer;
+    }
+    public void setStunServerPort(int stunServerPort)
+    {
+        this.stunServerPort = stunServerPort;
+    }
+    private void dumpBindings()
+    {
+        System.err.println("Stun hostport map:");
+        Enumeration<HostPort> hostports = privateToPublicMap.keys();
+        while (hostports.hasMoreElements())
+        {
+            HostPort privatehp = hostports.nextElement();
+            HostPort publichp = privateToPublicMap.get(privatehp);
+            System.out.println("\t" + privatehp + "\t" + publichp );
         }
     }
 
-    public boolean isNodeNatted()
-    {
-        return nodeNatted;
-    }
-
-    public String getPublicIp()
-    {
-        return publicIp;
-    }
-
-    public void setNodeNatted(boolean nodeNatted)
-    {
-        this.nodeNatted = nodeNatted;
-    }
 }

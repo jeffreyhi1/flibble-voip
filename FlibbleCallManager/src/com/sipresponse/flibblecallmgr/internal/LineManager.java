@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -33,9 +33,9 @@ public class LineManager
     private ConcurrentHashMap<String, Line> lines = 
         new ConcurrentHashMap<String, Line>();
     private Vector<Line> linesVector = new Vector<Line>();
+    private Vector<SipKeepAlive> keepAliveVector = new Vector<SipKeepAlive>();
     private CallManager callMgr;
     private RegistrationManager regMgr;
-    
     public LineManager(CallManager callMgr)
     {
         regMgr = new RegistrationManager(callMgr);
@@ -69,6 +69,7 @@ public class LineManager
             line.setRegisterEnabled(register);
             lines.put(sLineHandle, line);
             linesVector.add(line);
+            keepAliveVector.add(new SipKeepAlive(callMgr, line));
         }
         else
         {
@@ -118,6 +119,9 @@ public class LineManager
     {
         regMgr.shutdown();
         regMgr.interrupt();
+        for (SipKeepAlive ka : keepAliveVector)
+        {
+            ka.shutdown();
+        }
     }
-
 }

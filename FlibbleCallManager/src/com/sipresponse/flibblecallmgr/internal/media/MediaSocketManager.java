@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -18,6 +18,8 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.media;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,24 +58,28 @@ public class MediaSocketManager
             {
                 if (false == inUse[i])
                 {
-                    DatagramSocket test = null;
+                    DatagramSocket rtp = null;
+                    DatagramSocket rtcp = null;
                     try
                     {
-                        test = new DatagramSocket(portRangeStart + i );
-                        test.close();
-                        test = new DatagramSocket(portRangeStart + i + 1);
+                        rtp = new DatagramSocket(portRangeStart + i );
+                        rtcp = new DatagramSocket(portRangeStart + i + 1);
                     }
                     catch (Exception e)
                     {
                         e.printStackTrace();
                     }
                    
-                    if (null != test)
+                    if (isReceivingData(rtp))
+                    {
+                        continue;
+                    }
+                    if (null != rtp && null != rtcp)
                     {
                         next = i + portRangeStart;
                         inUse[i] = true;
-                        test.close();
-                        test = null;
+                        rtp.close();
+                        rtcp.close();
                         break;
                     }
                 }
@@ -143,4 +149,51 @@ public class MediaSocketManager
             socketMap.remove(new Integer(port));
         }
     }
+    
+    private boolean isReceivingData(final DatagramSocket rtp)
+    {
+        boolean receivingData = false;
+        SocketChecker checker = new SocketChecker(rtp);
+        checker.start();
+        try
+        {
+            Thread.sleep(100);
+        }
+        catch (InterruptedException e)
+        {
+        }
+        receivingData = checker.receivingData;
+        return receivingData;
+    }
+    
+    private class SocketChecker extends Thread
+    {
+        private boolean receivingData;
+        private DatagramSocket socket;
+        public SocketChecker(DatagramSocket socket)
+        {
+            this.socket = socket;
+        }
+        public void run()
+        {
+            byte[] buff = new byte[2048];
+            DatagramPacket p = new DatagramPacket(buff, buff.length);
+            try
+            {
+                socket.receive(p);
+            }
+            catch (IOException e)
+            {
+                return;
+            }
+            receivingData = true;
+            return;
+        }
+        public boolean isReceivingData()
+        {
+            return receivingData;
+        }
+    }
+
+
 }

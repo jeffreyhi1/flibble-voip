@@ -100,7 +100,7 @@ public class CallManagerTest implements FlibbleListener
         
         String callHandle = callMgr1.createCall(lineHandle1, uriA);
         assertTrue(callHandle != null);
-        callMgr1.placeCall(callHandle, MediaSourceType.MEDIA_SOURCE_DUMMY, null, false);
+        callMgr1.placeCall(callHandle, MediaSourceType.MEDIA_SOURCE_DUMMY, null, false, 100, 100);
         boolean ret = waitForCallEvent(callHandle, 
                                        EventCode.CALL_CONNECTED,
                                        EventReason.CALL_NORMAL,
@@ -129,15 +129,18 @@ public class CallManagerTest implements FlibbleListener
             callMgr1 = new CallManager();
             try
             {
-                callMgr1.initialize(localIp,
-                        5080,
-                        9100,
-                        9150,
-                        proxyAddress,
-                        5060,
-                        null,
+            	
+                FlibbleResult res = callMgr1.initialize(CallManager.AUTO_DISCOVER,
+                        5080,// port to bind to 
+                        9100,// start media port range
+                        9150,// end media port range
+                        proxyAddress,// domain
+                        proxyAddress,// proxy address
+                        5061,// proxy port
+                        null,// stun server
+                        "Flibble UA",
                         false,
-                        null);
+                        null);        	
             }
             catch (Exception e)
             {
@@ -149,15 +152,17 @@ public class CallManagerTest implements FlibbleListener
             callMgr2 = new CallManager();
             try
             {
-                callMgr2.initialize(localIp,
-                        5090,
-                        9200,
-                        9250,
-                        proxyAddress,
-                        5060,
-                        null,
+                FlibbleResult res = callMgr2.initialize(CallManager.AUTO_DISCOVER,
+                        5090,// port to bind to 
+                        9200,// start media port range
+                        9250,// end media port range
+                        proxyAddress,// domain
+                        proxyAddress,// proxy address
+                        5060,// proxy port
+                        null,// stun server
+                        "Flibble UA",
                         false,
-                        null);
+                        null);        	
             }
             catch (Exception e)
             {

@@ -11,6 +11,7 @@
 	<classpathentry kind="lib" path="lib/JainSipRi1.2.jar" sourcepath="C:/Documents and Settings/Michael Cohen/Desktop/downloads/jain-sip-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/nist-sdp-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/sip-sdp.jar"/>
-	<classpathentry kind="lib" path="lib/jstun-0.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-httpclient-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/Stun4J.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

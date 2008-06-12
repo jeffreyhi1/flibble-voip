@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -20,9 +20,12 @@ package com.sipresponse.flibblecallmgr;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Vector;
 
 import javax.sip.ListeningPoint;
 import javax.sip.ObjectInUseException;
@@ -37,8 +40,10 @@ import com.sipresponse.flibblecallmgr.internal.LineManager;
 import com.sipresponse.flibblecallmgr.internal.actions.AcceptCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.AnswerCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ByeAction;
+import com.sipresponse.flibblecallmgr.internal.actions.CancelAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ChangeMediaAction;
 import com.sipresponse.flibblecallmgr.internal.actions.HoldAction;
+import com.sipresponse.flibblecallmgr.internal.actions.JoinCallsAction;
 import com.sipresponse.flibblecallmgr.internal.actions.PlaceCallAction;
 import com.sipresponse.flibblecallmgr.internal.actions.ReferAction;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
@@ -46,6 +51,7 @@ import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
 import com.sipresponse.flibblecallmgr.internal.net.ProxyDiscoverer;
 import com.sipresponse.flibblecallmgr.internal.net.StunDiscovery;
 import com.sipresponse.flibblecallmgr.internal.util.HostPort;
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 /**
  * Object is central to flibble-voip. Allows for call control and media control.
@@ -61,12 +67,14 @@ public class CallManager
     private int udpSipPort;
     private int mediaPortStart;
     private int mediaPortEnd;
+    private String domain;
     private String proxyAddress;
     private int proxyPort;
     private String stunServer;
     private boolean useSoundCard;
     private String publicIp;
-
+    private String userAgent;
+    private FlibbleMediaProvider mediaProvider;
     /**
      * Constructor.
      * 
@@ -75,11 +83,27 @@ public class CallManager
     {
     }
 
+    /**
+     * Initializes the CallManager by loading the default property file, "flibble.properties",
+     * 
+     * @return Result of initialization
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
     public FlibbleResult initialize() throws IOException, IllegalArgumentException
     {
         return initialize(System.getProperty("user.home") + "/" + "flibble.properties");
     }
 
+    /**
+     * Initializes the CallManager by loading the default property file specified by the 
+     * filename
+     * 
+     * @param filename The filename of property file to be used for initialization. 
+     * @return Result of initialization
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
     public FlibbleResult initialize(String filename) throws IOException,
             IllegalArgumentException
     {
@@ -100,9 +124,9 @@ public class CallManager
         String proxyAddress = null;
         int proxyPort = -1;
         boolean enableStun = false;
-        String stunServer = null;
         boolean useSoundCard = false;
         String mediaPluginClass = null;
+        String domain;
 
         localIp = props.getProperty("localIp");
         if (null != props.getProperty("udpSipPort"))
@@ -121,6 +145,7 @@ public class CallManager
                     .intValue();
         }
         proxyAddress = props.getProperty("proxyAddress");
+        domain = props.getProperty("domain");
         if (null != props.getProperty("proxyPort"))
         {
             proxyPort = new Integer(props.getProperty("proxyPort")).intValue();
@@ -130,6 +155,7 @@ public class CallManager
             enableStun = Boolean.parseBoolean(props.getProperty("enableStun"));
         }
         stunServer = props.getProperty("stunServer");
+        userAgent = props.getProperty("userAgent");
         if (null != props.getProperty("useSoundCard"))
         {
             useSoundCard = Boolean.parseBoolean(props
@@ -141,9 +167,11 @@ public class CallManager
                 udpSipPort,
                 mediaPortStart,
                 mediaPortEnd,
+                domain,
                 proxyAddress,
                 proxyPort,
                 stunServer,
+                userAgent,
                 useSoundCard,
                 mediaPluginClass);
     }
@@ -172,14 +200,19 @@ public class CallManager
      * @param useSoundCard
      *            True if the application wishes to use an audio hardware
      *            device. Otherwise, false.
+     * @param mediaPluginClass 
+     *            Full classpath and name of the the media plugin class.  Can
+     *            be set to null to indicate usage of the default media plugin.
      */
     public FlibbleResult initialize(String localIp,
             int udpSipPort,
             int mediaPortStart,
             int mediaPortEnd,
+            String domain,
             String proxyAddress,
             int proxyPort,
             String stunServer,
+            String userAgent,
             boolean useSoundCard,
             String mediaPluginClass) throws IllegalArgumentException
     {
@@ -187,21 +220,64 @@ public class CallManager
         this.udpSipPort = udpSipPort;
         this.mediaPortStart = mediaPortStart;
         this.mediaPortEnd = mediaPortEnd;
+        this.domain = domain;
         this.proxyAddress = proxyAddress;
         this.proxyPort = proxyPort;
         this.stunServer = stunServer;
         this.useSoundCard = useSoundCard;
+        this.userAgent = userAgent;
         
         if (localIp.equals(AUTO_DISCOVER))
         {
             ProxyDiscoverer proxyDiscoverer = new ProxyDiscoverer();
-            HostPort localHostPort = proxyDiscoverer.selectBestIpAddress(proxyAddress, proxyPort, udpSipPort);
+            boolean bStun = false;
+            if (getStunServer() != null && getStunServer().length() > 0)
+            {
+                StunDiscovery.getInstance().setStunServer(getStunServer());
+                StunDiscovery.getInstance().setStunServerPort(3478);
+                bStun = true;   
+            }
+            HostPort localHostPort = proxyDiscoverer.selectBestIpAddress(proxyAddress,
+                    domain,
+                    proxyPort,
+                    udpSipPort,
+                    bStun);
             if (null == localHostPort)
             {
-                return FlibbleResult.RESULT_NETWORK_FAILURE;
+                try
+                {
+                    this.localIp = InetAddress.getLocalHost().getHostAddress();
+                }
+                catch (UnknownHostException e)
+                {
+                    e.printStackTrace();
+                    return FlibbleResult.RESULT_NETWORK_FAILURE;
+                }                
             }
-            this.localIp = localHostPort.getHost();
-            this.udpSipPort = localHostPort.getPort();
+            else
+            {
+                this.localIp = localHostPort.getHost();
+                this.udpSipPort = localHostPort.getPort();
+            }
+        }
+        if (stunServer != null && stunServer.length() > 0)
+        {
+            HostPort publicHostPort = null;
+            try
+            {
+                StunDiscovery.getInstance().setStunServer(stunServer);
+                StunDiscovery.getInstance().setStunServerPort(3478);
+                publicHostPort = StunDiscovery.getInstance().discoverPublicIp(this.localIp, 0, null);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            if (null != publicHostPort)
+            {
+                setPublicIp(publicHostPort.getHost());
+                System.err.println("Found external ip: " + publicHostPort.getHost());
+            }
         }
 
         // if the application needs to use a sound card, and no
@@ -217,30 +293,15 @@ public class CallManager
                 "Media end port must be greater than start port."); }
         InternalCallManager.getInstance().setProvider(this,
                 new FlibbleSipProvider(this));
-        InternalCallManager.getInstance().getProvider(this).initialize();
+        if (false == InternalCallManager.getInstance().getProvider(this).initialize())
+        {
+            return FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        }
         InternalCallManager.getInstance().setLineManager(this,
                 new LineManager(this));
         InternalCallManager.getInstance().setMediaSocketManager(this,
                 new MediaSocketManager(this, mediaPortStart, mediaPortEnd));
         InternalCallManager.getInstance().setMediaPluginClass(mediaPluginClass);
-        if (stunServer != null)
-        {
-            StunDiscovery stun = new StunDiscovery();
-            boolean bFound = false;
-            try
-            {
-                bFound = stun.discoverPublicIp(stunServer, localIp, -1, null);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            if (true == bFound)
-            {
-                setPublicIp(stun.getPublicIp());
-                System.err.println("Found external ip: " + stun.getPublicIp());
-            }
-        }
         return FlibbleResult.RESULT_SUCCESS;
     }
 
@@ -313,6 +374,17 @@ public class CallManager
      * 
      * @param callHandle
      *            The call handle obtained by invoking createCall.
+     * @param mediaSourceType
+     *        Type of media source to send to the remote endpoint of the call.
+     * @param filename
+     *        For file media types, the filename of the .wav file to be
+     *        used as a media source.
+     * @param loop
+     *        For file media types, and indication of the desired looping behavior
+     * @param initialVolume
+     *        Initial volume for audio playout.  Valid values are between 0 and 100, inclusive
+     * @param initialGain
+     *        Initial microphone gain.  Valid values are between 0 and 100, inclusive
      * @return A result indicating the validity of the parameters. Actual
      *         results of the INVITE will come in the form of an event See
      *         FlibbleListener.onEvent.
@@ -320,7 +392,9 @@ public class CallManager
     public FlibbleResult placeCall(String callHandle,
             MediaSourceType mediaSourceType,
             String filename,
-            boolean loop)
+            boolean loop,
+            int initialVolume,
+            int initialGain)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
 
@@ -332,13 +406,65 @@ public class CallManager
                     call,
                     mediaSourceType,
                     filename,
-                    loop);
+                    loop,
+                    initialVolume,
+                    initialGain);
             placeCall.start();
             result = FlibbleResult.RESULT_SUCCESS;
         }
         return result;
     }
 
+    /**
+     * Joins currently connected calls into a conference
+     * 
+     * (CURRENTLY UNIMPLEMENTED)
+     *  
+     * @param calls array of calls to be joined into a conference.
+     * 
+     * @return The result of the join.
+     */
+    public FlibbleResult joinCalls(CallData[] calls)
+    {
+        Call[] callArray = new Call[calls.length];
+        FlibbleResult result = FlibbleResult.RESULT_SUCCESS;
+        int i = 0;
+        for (CallData cd : calls)
+        {
+            callArray[i] = cd.getCall();
+            i++;
+        }
+        JoinCallsAction joinCalls = new JoinCallsAction(this,
+                callArray);
+        joinCalls.start();
+        return result;
+    }
+    
+    /**
+     * Joins currently connected calls into a conference
+     *
+     * (CURRENTLY UNIMPLEMENTED)
+     * 
+     * @param calls array of calls to be joined into a conference.
+     * 
+     * @return The result of the join.
+     */
+    public FlibbleResult joinCalls(Vector<CallData> calls)
+    {
+        Call[] callArray = new Call[calls.size()];
+        FlibbleResult result = FlibbleResult.RESULT_SUCCESS;
+        int i = 0;
+        for (CallData cd : calls)
+        {
+            callArray[i] = cd.getCall();
+            i++;
+        }
+        JoinCallsAction joinCalls = new JoinCallsAction(this,
+                callArray);
+        joinCalls.start();
+        return result;
+    }
+    
     /**
      * Ends a currently connected call by sending a BYE message to the remote
      * party.
@@ -357,8 +483,16 @@ public class CallManager
                 callHandle);
         if (null != call)
         {
-            ByeAction bye = new ByeAction(this, call);
-            bye.start();
+            if (call.isConnected())
+            {
+                ByeAction bye = new ByeAction(this, call);
+                bye.start();
+            }
+            else if (call.isFromThisSide())
+            {
+                CancelAction cancel = new CancelAction(this, call);
+                cancel.start();
+            }
             result = FlibbleResult.RESULT_SUCCESS;
         }
         return result;
@@ -366,6 +500,10 @@ public class CallManager
 
     /**
      * Accepts an invite from a remote party, sending a non final response
+     * 
+     * @param callHandle - Handle of the call to be accepted
+     * @param statusCode - The non final response code to send back to the remote party.
+     *                     For example, a 180 Ringing response.
      */
     public FlibbleResult acceptCall(String callHandle,
                              int statusCode)
@@ -388,11 +526,26 @@ public class CallManager
     
     /**
      * Answers an invite from a remote party, sending a final 200 OK response
+     * 
+     * @param callHandle Handle of the call to be answered.
+     * @param mediaSourceType
+     *        Type of media source to send to the remote endpoint of the call.
+     * @param filename
+     *        For file media types, the filename of the .wav file to be
+     *        used as a media source.
+     * @param loop
+     *        For file media types, and indication of the desired looping behavior
+     * @param initialVolume
+     *        Initial volume for audio playout.  Valid values are between 0 and 100, inclusive
+     * @param initialGain
+     *        Initial microphone gain.  Valid values are between 0 and 100, inclusive
      */
     public FlibbleResult answerCall(String callHandle,
             MediaSourceType mediaSourceType,
             String mediaFilename,
-            boolean loop)
+            boolean loop,
+            int initialVolume,
+            int initialGain)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         Call call = InternalCallManager.getInstance().getCallByHandle(
@@ -403,7 +556,9 @@ public class CallManager
                                                                  call,
                                                                  mediaSourceType,
                                                                  mediaFilename, 
-                                                                 loop);
+                                                                 loop,
+                                                                 initialVolume,
+                                                                 initialGain);
             answerAction.start();
             result = FlibbleResult.RESULT_SUCCESS;
         }
@@ -412,6 +567,19 @@ public class CallManager
     
     /**
      * Changes the media source for a call in progress.
+     * 
+     * @param callHandle Handle of the call.
+     * @param mediaSourceType
+     *        Type of media source to send to the remote endpoint of the call.
+     * @param filename
+     *        For file media types, the filename of the .wav file to be
+     *        used as a media source.
+     * @param loop
+     *        For file media types, and indication of the desired looping behavior
+     * @param initialVolume
+     *        Initial volume for audio playout.  Valid values are between 0 and 100, inclusive
+     * @param initialGain
+     *        Initial microphone gain.  Valid values are between 0 and 100, inclusive
      */
     public FlibbleResult changeMediaSource(String callHandle,
             MediaSourceType mediaSourceType,
@@ -433,30 +601,189 @@ public class CallManager
         }
         return result;
     }
-    
-    public FlibbleResult playFileLocally(String callHandle, URL url)
+
+    /**
+     * Enables local echo suppression.  The effect of echo suppression will 
+     * be that, during local audio playout of remote audio, the microphone capture
+     * will be suppressed, or partially suppressed.
+     * 
+     * @param enable Enables or disables echo suppression.
+     * @param percentSuppression The percent of echo suppression to use. 
+     * (100% will mute the microphone during above-threshold local audio playout)
+     * @return
+     */
+    public FlibbleResult enableEchoSuppression(boolean enable, float percentSuppression)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
-
+        if (null == mediaProvider)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+                return FlibbleResult.RESULT_UNKNOWN_FAILURE;
+            }
+        }
+        mediaProvider.enableEchoSuppression(enable, percentSuppression);
+        result = FlibbleResult.RESULT_SUCCESS;
+        return result;
+    }
+    
+    /**
+     * Sets the microphone gain level.
+     * @param gain Gain level (valid values are 0 - 100)
+     * @return
+     */
+    public FlibbleResult setGain(int gain)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+        if (null == mediaProvider)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+                return FlibbleResult.RESULT_UNKNOWN_FAILURE;
+            }
+        }
+        mediaProvider.setMicrophoneGain(gain);
+        result = FlibbleResult.RESULT_SUCCESS;
+        return result;
+    }
+    /**
+     * Sets the call playout volume for a specific call.
+     * @param callHandle
+     * @param vol
+     * @return
+     */
+    public FlibbleResult setCallVolume(String callHandle, int vol)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         Call call = InternalCallManager.getInstance().getCallByHandle(
                 callHandle);
         if (null != call)
         {
-            call.getMediaProvider().playFileLocally(url, true);
+            call.setVolume(vol);
             result = FlibbleResult.RESULT_SUCCESS;
         }
         return result;
-    }    
+    }
     
     /**
-     * holdCall - puts the remote party on hold.
-     * 
-     * @param callHandle Call handle of the call to be put on hold.
-     * @param hold - True for hold, false for unhold.
-     * @return RESULT_SUCCESS or other for failure
+     * Sets the audio playout volume for non-call related scenarios, 
+     * such as local media file playout.
+     * @param vol
      */
-    public FlibbleResult holdCall(String callHandle,
-            boolean hold)
+    public void setVolume(int vol)
+    {
+        if (null == mediaProvider)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+        mediaProvider.setVolume(vol);
+    }
+    
+    /**
+     * Plays a media file to the system's audio playout device.
+     * @param url - Url of the media file.
+     * @param loop - Looping preference.
+     * @param volume Volume (valid values are 0 - 100)
+     * @return
+     */
+    public FlibbleResult playFileLocally(URL url, boolean loop, int volume)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+
+        if (null == mediaProvider)
+        {
+            String mediaPluginClassName = InternalCallManager.getInstance()
+                .getMediaPluginClass();
+            try
+            {
+                mediaProvider = (FlibbleMediaProvider) Class.forName(
+                        mediaPluginClassName).newInstance();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+                return FlibbleResult.RESULT_UNKNOWN_FAILURE;
+            }
+        }
+        mediaProvider.playFileLocally(url, loop, volume);
+        result = FlibbleResult.RESULT_SUCCESS;
+        return result;
+    }
+    
+    /**
+     * Stops local playout of a media file.
+     * @param url Url of the media file to be stopped.
+     * @return
+     */
+    public FlibbleResult stopFileLocally(URL url)
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopFileLocally(url);
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;
+    }   
+    
+    /**
+     * Stops local playout of all media files.
+     * @return
+     */
+    public FlibbleResult stopLocalPlayoutAll()
+    {
+        FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
+
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopLocalPlayoutAll();
+            result = FlibbleResult.RESULT_SUCCESS;
+        }
+        return result;        
+    }
+    
+
+    /**
+     * Puts a call on hold, or takes a call off hold, in a 
+     * synchronous manner.
+     * @param callHandle The call to put on or off hold.
+     * @param hold On-hold or off-hold preference
+     * @param volume For off-hold operations, the local playout volume
+     *  at which to resume the call.
+     * @param timeout Maximum time to wait for a hold operation to complete
+     * @return
+     */
+    public FlibbleResult holdCallSynchronous(String callHandle,
+            boolean hold,
+            int volume,
+            int timeout)
     {
         FlibbleResult result = FlibbleResult.RESULT_UNKNOWN_FAILURE;
         Call call = InternalCallManager.getInstance().getCallByHandle(
@@ -465,11 +792,47 @@ public class CallManager
         {
             HoldAction holdAction = new HoldAction(this,
                                                    call,
-                                                   hold);
+                                                   hold,
+                                                   volume);
+            Signal signal = null;
+            if (timeout > -1)
+            {
+                signal = new Signal();
+            }
+            holdAction.setNotifier(signal);
             holdAction.start();
+            if (null != signal)
+            {
+                try
+                {
+                    signal.waitForResponseEvent(timeout);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
             result = FlibbleResult.RESULT_SUCCESS;
         }        
         return result;
+        
+    }
+    
+    /**
+     * Puts a call on hold, or takes a call off hold, in a 
+     * asynchronous manner.
+     * @param callHandle The call to put on or off hold.
+     * @param hold On-hold or off-hold preference
+     * @param volume For off-hold operations, the local playout volume
+     *  at which to resume the call.
+     * @return
+     */
+    public FlibbleResult holdCall(String callHandle,
+            boolean hold,
+            int volume
+            )
+    {
+        return holdCallSynchronous(callHandle, hold, volume, -1);
     }
     /**
      * Transfers a currently connected call by sending a REFER message to the
@@ -548,6 +911,9 @@ public class CallManager
         InternalCallManager.getInstance().removeListener(this, listener);
     }
 
+    /**
+     * Removes aLL objectS from the list of objects to receive Flibble Events.
+     */
     public void removeAllListeners()
     {
         InternalCallManager.getInstance().removeAllListeners(this);
@@ -568,6 +934,11 @@ public class CallManager
         return mediaPortStart;
     }
 
+    public String getDomain()
+    {
+        return domain;
+    }
+    
     public String getProxyAddress()
     {
         return proxyAddress;
@@ -583,6 +954,11 @@ public class CallManager
         return udpSipPort;
     }
 
+    public void setUdpSipPort(int udpSipPort)
+    {
+        this.udpSipPort = udpSipPort;   
+    }
+    
     public boolean getUseSoundCard()
     {
         return useSoundCard;
@@ -593,6 +969,32 @@ public class CallManager
         CallData callData = InternalCallManager.getInstance().getCallData(callHandle);
         return callData;
     }
+    public String getPublicIp()
+    {
+        return publicIp;
+    }
+    
+    public void setPublicIp(String publicIp)
+    {
+        this.publicIp = publicIp;
+    }
+    
+    public String getContactIp()
+    {
+        if (publicIp != null)
+            return publicIp;
+        return localIp;
+    }
+
+    public String getUserAgent()
+    {
+        return userAgent;
+    }
+
+    public String getStunServer()
+    {
+        return stunServer;
+    }
 
     /**
      * Tears down this call manager.
@@ -601,10 +1003,17 @@ public class CallManager
     public void destroyCallManager()
     {
         removeAllListeners();
-        InternalCallManager.getInstance().getLineManager(this)
-                .stopRegistration();
-        SipStack sipStack = InternalCallManager.getInstance().getProvider(this)
-                .getSipStack();
+        LineManager lineManager = InternalCallManager.getInstance().getLineManager(this);
+        if (null != lineManager)
+        {
+            lineManager.stopRegistration();
+        }
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance().getProvider(this);
+        SipStack sipStack = null;
+        if (flibbleProvider != null)
+        {
+            sipStack = flibbleProvider.getSipStack();
+        }
 
         try
         {
@@ -670,24 +1079,6 @@ public class CallManager
             e.printStackTrace();
         }
         System.err.println("CallManager destroyed.");
-    }
-
-    protected String getPublicIp()
-    {
-        return publicIp;
-    }
-    
-    public void setPublicIp(String publicIp)
-    {
-        this.publicIp = publicIp;
-    }
-    
-    public String getContactIp()
-    {
-        
-        if (publicIp != null)
-            return publicIp;
-        return localIp;
     }
 
 }

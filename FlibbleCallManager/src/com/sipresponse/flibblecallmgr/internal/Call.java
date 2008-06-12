@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -30,6 +30,7 @@ import javax.sdp.SessionDescription;
 import javax.sdp.SessionName;
 import javax.sdp.Time;
 import javax.sdp.Version;
+import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
@@ -41,6 +42,8 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.net.StunDiscovery;
+import com.sipresponse.flibblecallmgr.internal.util.HostPort;
 
 public class Call
 {
@@ -50,6 +53,7 @@ public class Call
     private String lineHandle;
     private String sipUriString;
     private Dialog dialog;
+    private String toTag;
     private SessionDescription localSdp;
     private SessionDescription remoteSdp;
     private Line line;
@@ -62,6 +66,8 @@ public class Call
     private ServerTransaction serverTransaction;
     private boolean fromThisSide;
     private Address remoteAddress;
+    private ClientTransaction clientTransaction;
+    private int volume;
     
     public Call(CallManager callMgr,
             String lineHandle,
@@ -84,17 +90,7 @@ public class Call
 
         if (true == bUseSoundCard)
         {
-            String mediaPluginClassName = InternalCallManager.getInstance()
-                    .getMediaPluginClass();
-            try
-            {
-                mediaProvider = (FlibbleMediaProvider) Class.forName(
-                        mediaPluginClassName).newInstance();
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            createMediaProvider();
         }
     }
     
@@ -143,7 +139,30 @@ public class Call
         
         try
         {
-            address = remoteSdp.getConnection().getAddress();
+            if (remoteSdp.getConnection() != null)
+                address = remoteSdp.getConnection().getAddress();
+            if (address == null)
+            {
+                // look for it as part of the 1st media description
+            MediaDescription description = null;
+            try
+            {
+                description = (MediaDescription) remoteSdp.getMediaDescriptions(false).get(0);
+            }
+            catch (SdpException e)
+            {
+                e.printStackTrace();
+            }
+            try
+            {
+                address = description.getConnection().getAddress();
+            }
+            catch (SdpParseException e)
+            {
+                e.printStackTrace();
+            }
+                
+            }
         }
         catch (SdpParseException e)
         {
@@ -174,6 +193,16 @@ public class Call
         }
         return remotePort;
     }
+    public String getToTag()
+    {
+        return toTag;
+    }
+
+    public void setToTag(String toTag)
+    {
+        this.toTag = toTag;
+    }
+
     public String getCallId()
     {
         return callId;
@@ -214,6 +243,26 @@ public class Call
     public void createLocalSdp(String[] codecNames, SessionDescription remoteSdp, int receivePort)
     {
         String ipToShare = callMgr.getContactIp();
+
+        if (getCallMgr().getStunServer() != null &&
+            getCallMgr().getStunServer().length() > 0)
+        {
+            try
+            {
+                HostPort publicHostPort = StunDiscovery.getInstance().discoverPublicIp(
+                        getCallMgr().getLocalIp(),
+                        receivePort,
+                        null);
+                if (publicHostPort.getPort() > 0)
+                {
+                    receivePort = publicHostPort.getPort();
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }        
+        }
         try
         {
             localSdp = SdpFactory.getInstance().createSessionDescription();
@@ -332,4 +381,38 @@ public class Call
         return remoteAddress;
     }
 
+    public ClientTransaction getClientTransaction()
+    {
+        return clientTransaction;
+    }
+
+    public void setClientTransaction(ClientTransaction clientTransaction)
+    {
+        this.clientTransaction = clientTransaction;
+    }
+    
+    public void setVolume(int volume)
+    {
+        this.volume = volume;
+        mediaProvider.setVolume(volume);
+    }
+    
+    public int getVolume()
+    {
+        return volume;
+    }
+    public void createMediaProvider()
+    {
+        String mediaPluginClassName = InternalCallManager.getInstance()
+                .getMediaPluginClass();
+        try
+        {
+            mediaProvider = (FlibbleMediaProvider) Class.forName(
+                    mediaPluginClassName).newInstance();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
 }

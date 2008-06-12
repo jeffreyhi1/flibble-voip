@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -23,6 +23,7 @@ import java.net.URL;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
+import com.sipresponse.flibblecallmgr.internal.Call;
 
 /**
  * Abstract class defining the media control interface. 
@@ -52,7 +53,6 @@ public abstract class FlibbleMediaProvider
                                               String callHandle,
                                               String address,
                                               int port);
-    public abstract void startRtpReceive(String address, int port);
     public abstract void stopRtpReceive(String address, int port);
     public abstract void initializeRtpSend(CallManager callMgr,
                                            String callHandle,
@@ -67,7 +67,12 @@ public abstract class FlibbleMediaProvider
     public abstract void changeMediaSource(MediaSourceType mediaSourceType,
                                            String mediaFilename,
                                            boolean loop);
-    public abstract void playFileLocally(URL url, boolean loop);
-    public abstract void stopFileLocally();
+    public abstract void playFileLocally(URL url, boolean loop, int volume);
+    public abstract void stopFileLocally(URL url);
+    public abstract void stopLocalPlayoutAll();
     public abstract void sendDtmf(int dtmfCode);
+    public abstract void joinOtherCallsWithDataSource(Call call, Call[] otherCalls);
+    public abstract void setVolume(int volume);
+    public abstract void setMicrophoneGain(int gain);
+    public abstract void enableEchoSuppression(boolean enable, float percentSuppression);
 }

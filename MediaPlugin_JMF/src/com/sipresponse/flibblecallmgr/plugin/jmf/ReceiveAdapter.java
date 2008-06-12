@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -36,6 +36,7 @@ import com.sipresponse.flibblecallmgr.EventReason;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 public class ReceiveAdapter implements RTPConnector
 {
@@ -50,6 +51,7 @@ public class ReceiveAdapter implements RTPConnector
     private MediaSocketManager socketMgr;
     private String address;
     private int port;
+    private Signal inputStreamSignal = new Signal();
     
     DatagramSocket dataSock;
 
@@ -159,52 +161,21 @@ public class ReceiveAdapter implements RTPConnector
     {
     }
     
-    class SocketOutputStream implements OutputDataStream
-    {
-        DatagramSocket sock;
-        InetAddress addr;
-        int port;
-
-        public SocketOutputStream(DatagramSocket sock, InetAddress addr, int port)
-        {
-            this.sock = sock;
-            this.addr = addr;
-            this.port = port;
-        }
-
-        public int write(byte data[], int offset, int len)
-        {
-            try
-            {
-                sock.send(new DatagramPacket(data, offset, len, addr, port));
-            }
-            catch (Exception e)
-            {
-                return -1;
-            }
-            return len;
-        }
-    }
+    
     /**
      * An inner class to implement an PushSourceStream based on UDP sockets.
      */
     class SocketInputStream extends Thread implements PushSourceStream
     {
-
         DatagramSocket sock;
-
         InetAddress addr;
-
         int port;
-
         boolean done = false;
-
-        boolean dataRead = false;
-
         SourceTransferHandler sth = null;
-
+        private boolean ignore;
         public SocketInputStream(DatagramSocket sock, InetAddress addr, int port)
         {
+            
             this.sock = sock;
             this.addr = addr;
             this.port = port;
@@ -212,13 +183,23 @@ public class ReceiveAdapter implements RTPConnector
 
         public int read(byte buffer[], int offset, int length)
         {
-            DatagramPacket p = new DatagramPacket(buffer, offset, length, addr,
+            DatagramPacket p= new DatagramPacket(buffer, offset, length, addr,
                     port);
+            p.setAddress(addr);
+            p.setPort(port);
+            p.setData(buffer, offset, length);
             try
             {
                 sock.receive(p);
+                if (ignore == true)
+                {
+                    for (int i = 0; i < 160 ; i++)
+                    {
+                        buffer[i + 12] = 0;
+                    }
+                }
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 return -1;
             }
@@ -231,11 +212,12 @@ public class ReceiveAdapter implements RTPConnector
                 }
                 return read(buffer, offset, length);
             }
-            synchronized (this)
+            else if (getPayloadType(p.getData()) != 0)
             {
-                dataRead = true;
-                notify();
+                return read(buffer, offset, length);
             }
+                
+            inputStreamSignal.notifyResponseEvent();
             return p.getLength();
         }
 
@@ -244,15 +226,15 @@ public class ReceiveAdapter implements RTPConnector
             super.start();
             if (sth != null)
             {
-                dataRead = true;
-                notify();
+                inputStreamSignal.notifyResponseEvent();
             }
+            setPriority(Thread.MAX_PRIORITY);
         }
 
         public synchronized void kill()
         {
             done = true;
-            notify();
+            inputStreamSignal.notifyResponseEvent();
         }
 
         public int getMinimumTransferSize()
@@ -260,17 +242,16 @@ public class ReceiveAdapter implements RTPConnector
             return 2 * 1024; // twice the MTU size, just to be safe.
         }
 
-        public synchronized void setTransferHandler(SourceTransferHandler sth)
+        public void setTransferHandler(SourceTransferHandler sth)
         {
             this.sth = sth;
-            dataRead = true;
-            notify();
+            inputStreamSignal.notifyResponseEvent();
         }
 
         // Not applicable.
         public ContentDescriptor getContentDescriptor()
         {
-            return null;
+             return new ContentDescriptor(ContentDescriptor.RAW);
         }
 
         // Not applicable.
@@ -304,21 +285,20 @@ public class ReceiveAdapter implements RTPConnector
         {
             while (!done)
             {
-                synchronized (this)
+                try
                 {
-                    while (!dataRead && !done)
+                    boolean ret = inputStreamSignal.waitForSignal(25);
+                    if (false == ret)
                     {
-                        try
-                        {
-                            wait();
-                        }
-                        catch (InterruptedException e)
-                        {
-                        }
+                        Thread.sleep(1);
+                        continue;
                     }
-                    dataRead = false;
                 }
-
+                catch (InterruptedException e)
+                {
+                    done = true;
+                    return;
+                }
                 if (sth != null && !done)
                 {
                     sth.transferData(this);
@@ -327,6 +307,16 @@ public class ReceiveAdapter implements RTPConnector
         }
     }
     
+    private byte getPayloadType(byte[] buffer)
+    {
+        // the payload type id is in the 2nd byte of the rtp
+        byte payloadType = buffer[1];
+        
+        // do a bitwise-and to remove the first bit of this byte (the marker bit)
+        payloadType &= 0x7F;
+        
+        return payloadType;
+    }
     private boolean isDtmfEvent(byte[] buffer)
     {
         boolean ret = false;

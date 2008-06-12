@@ -16,43 +16,55 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  ******************************************************************************/
-package com.sipresponse.flibblecallmgr.internal;
-
-import java.util.Random;
+package com.sipresponse.flibblecallmgr.internal.handlers;
 
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
-import javax.sip.header.ToHeader;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
-import com.sipresponse.flibblecallmgr.internal.Line;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 
-public abstract class SipMessageProcessor extends Thread
+public class CancelHandler extends Handler
 {
-    protected Call call;
-    protected Line line;
-    protected CallManager callMgr;
-
-    public SipMessageProcessor()
+    public CancelHandler(CallManager callMgr,
+            Call call,
+            RequestEvent requestEvent)
     {
+        super(callMgr, call, null, requestEvent);
     }
-
-    public void sendResponse(int statusCode)
+    
+    public void execute()
     {
+        // fire a disconnected event
+        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                EventCode.CALL_DISCONNECTED,
+                EventReason.CALL_CANCELLED,
+                line.getHandle(),
+                call.getHandle()));
+        
+        // stop media here?
+        FlibbleMediaProvider mediaProvider = call.getMediaProvider();
+        
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
+            mediaProvider.stopRtpSend(call.getRemoteSdpAddress(), call.getRemoteSdpPort());
+        }
+        // send a 200 OK
         FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
-                .getProvider(callMgr);
+            .getProvider(callMgr);
         Response response = null;
         try
         {
-            if (call.getServerTransaction() != null)
-            {
-                response = flibbleProvider.messageFactory.createResponse(statusCode,
-                        call.getServerTransaction().getRequest());
-            }
+            response = flibbleProvider.messageFactory.createResponse(200, requestEvent.getRequest());
         }
         catch (Exception e)
         {
@@ -60,26 +72,9 @@ public abstract class SipMessageProcessor extends Thread
         }
         if (null != response)
         {
-            ServerTransaction st = call.getLastRequestEvent().getServerTransaction();
-            if (null == st)
-            {
-                st = call.getServerTransaction();
-            }
-            if (null == st)
-            {
-                return;
-            }
+            ServerTransaction st = requestEvent.getServerTransaction();
             try
             {
-                //if (200 >= statusCode)
-                {
-                    ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
-                    if (toHeader.getTag() == null)
-                    {
-                        toHeader.setTag(call.getToTag());   
-                    }
-                }
-               
                 st.sendResponse(response);
             }
             catch (Exception e)
@@ -87,5 +82,7 @@ public abstract class SipMessageProcessor extends Thread
                 e.printStackTrace();
             }
         }
+        // remove call from internal call manager
+        InternalCallManager.getInstance().removeCallByHandle(call.getHandle());
     }
 }

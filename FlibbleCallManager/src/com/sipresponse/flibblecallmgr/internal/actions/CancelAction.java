@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -18,15 +18,65 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.actions;
 
+import javax.sip.ClientTransaction;
+import javax.sip.Dialog;
+import javax.sip.ResponseEvent;
+import javax.sip.SipException;
+import javax.sip.header.ViaHeader;
+import javax.sip.message.Request;
+
 import com.sipresponse.flibblecallmgr.CallManager;
+import com.sipresponse.flibblecallmgr.Event;
+import com.sipresponse.flibblecallmgr.EventCode;
+import com.sipresponse.flibblecallmgr.EventReason;
+import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.internal.Call;
+import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
+import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import com.sipresponse.flibblecallmgr.internal.util.AuthenticationHelper;
 
 public class CancelAction extends ActionThread
 {
 
-    protected CancelAction(CallManager callMgr, Call call)
+    public CancelAction(CallManager callMgr, Call call)
     {
         super(callMgr, call, null);
     }
+
+    @Override
+    public void run()
+    {
+        FlibbleSipProvider flibbleProvider = InternalCallManager.getInstance()
+            .getProvider(callMgr);
+        FlibbleMediaProvider mediaProvider = call.getMediaProvider();
+        if (null != mediaProvider)
+        {
+            mediaProvider.stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
+        }
+        
+        Dialog dialog = call.getDialog();
+        Request cancel = null;
+        ClientTransaction originalInviteTransaction = call.getClientTransaction();
+        ClientTransaction ct = null;
+        try
+        {
+            cancel = originalInviteTransaction.createCancel();
+            ViaHeader viaHeader = (ViaHeader)cancel.getHeader(ViaHeader.NAME);
+            viaHeader.setRPort();            
+            
+            originalInviteTransaction.terminate();
+            ct = flibbleProvider.getSipProvider().getNewClientTransaction(cancel);
+            ct.sendRequest();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        ResponseEvent responseEvent = flibbleProvider.waitForResponseEvent(ct);
+        // response should be 200 ok...
+        
+    }
+    
 
 }

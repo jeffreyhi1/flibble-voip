@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -39,6 +39,13 @@ public class RtpHelper
         return byteArrayToInt(data[8], data[9], data[10], data[11]);
     }
     
+  public static byte[] shortToByteArray(short value) {
+                byte[] serverValue = new byte[2];
+                serverValue[0] = (byte) (value >>> 8);
+                serverValue[1] = (byte) value;
+                return serverValue;
+            }
+    
     public static int byteArrayToInt(byte b1, byte b2, byte b3, byte b4)
     {
         int value = 0;
@@ -48,7 +55,38 @@ public class RtpHelper
         value += (b1 & 0xFF) << 24;
         return value;
     }
+    public static int byteArrayToShort(byte b1, byte b2)
+    {
+        int value = 0;
+        value = (0xFF & b2);
+        value += ( b1 & 0xFF) << 8;
+        return value;
+    }
     
+  public static short bytesToShort(byte[] bytes, int off, int len,
+    boolean little)
+  {
+    if (bytes.length - off < len) len = bytes.length - off;
+    short total = 0;
+    for (int i=0, ndx=off; i<len; i++, ndx++) {
+      total |= (bytes[ndx] < 0 ? 256 + bytes[ndx] :
+        (int) bytes[ndx]) << ((little ? i : len - i - 1) * 8);
+    }
+    return total;
+  }    
+  
+  public static short bigEndianBytesToShort (byte[] buffer, int offset)
+  {
+    return (short) (((buffer[offset+0] & 0xff) << 8) +
+                    ((buffer[offset+1] & 0xff) << 0));
+  }
+
+  public static short littleEndianBytesToShort (byte[] buffer, int offset)
+  {
+    return (short) (((buffer[offset+1] & 0xff) << 8) +
+                    ((buffer[offset+0] & 0xff) << 0));
+  }
+
     public static byte[] createDtmfEvent(int payloadId,
             int seqNo,
             long timestamp,

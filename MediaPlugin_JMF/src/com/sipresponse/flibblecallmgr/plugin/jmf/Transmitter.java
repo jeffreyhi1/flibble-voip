@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -20,6 +20,7 @@ package com.sipresponse.flibblecallmgr.plugin.jmf;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Vector;
 
 import javax.media.Codec;
 import javax.media.Controller;
@@ -28,6 +29,8 @@ import javax.media.ControllerEvent;
 import javax.media.ControllerListener;
 import javax.media.EndOfMediaEvent;
 import javax.media.Format;
+import javax.media.IncompatibleSourceException;
+import javax.media.Manager;
 import javax.media.MediaLocator;
 import javax.media.NoProcessorException;
 import javax.media.Processor;
@@ -52,6 +55,7 @@ import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
+import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
 import com.sun.media.codec.audio.rc.RateCvrt;
 
 public class Transmitter
@@ -79,15 +83,24 @@ public class Transmitter
     private boolean loop;
 
     private DataSource ds;
-
+    private MicrophoneSource micSource;
     private SendStream sendStream;
-    
+    private FlibbleMediaProvider mediaProvider;
     private SendAdapter sendAdapter;
+    private Call[] otherCalls;
     
-    public Transmitter(CallManager callMgr, String callHandle, String destIp,
-            int destPort, int srcPort, MediaSourceType mediaSourceType,
-            String mediaFilename, boolean loop)
+    public Transmitter(FlibbleMediaProvider mediaProvider,
+            CallManager callMgr,
+            String callHandle,
+            String destIp,
+            int destPort,
+            int srcPort,
+            MediaSourceType mediaSourceType,
+            String mediaFilename,
+            boolean loop,
+            Call[] otherCalls)
     {
+        this.mediaProvider = mediaProvider;
         this.callMgr = callMgr;
         this.callHandle = callHandle;
         this.destIp = destIp;
@@ -96,6 +109,7 @@ public class Transmitter
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         this.loop = loop;
+        this.otherCalls = otherCalls;
         start();
     }
 
@@ -125,40 +139,26 @@ public class Transmitter
      */
     public void stop()
     {
-        synchronized (this)
-        {
-            if (processor != null)
-            {
-                try
+//        new Thread()
+//        {
+//            public void run()
+//            {
+                synchronized (this)
                 {
-                    if (null != ds)
+                   sendAdapter.close();
+                    if (processor != null)
                     {
-                        ds.stop();
+                        
+                        processor.stop();
+                        processor.close();
+                        
+                        processor = null;
+                        rtpMgr.removeTargets("");
+                        rtpMgr.dispose();
                     }
                 }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-                try
-                {
-                    if (null != sendStream)
-                    {
-                        sendStream.stop();
-                    }
-                }
-                catch (IOException e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                processor.stop();
-                processor.close();
-                processor = null;
-                rtpMgr.removeTargets("");
-                rtpMgr.dispose();
-            }
-        }
+//            }
+//        }.start();
     }
 
     public void sendDtmf(int dtmfCode)
@@ -168,14 +168,79 @@ public class Transmitter
             sendAdapter.sendDtmf(dtmfCode);
         }
     }
+
+    
+    private DataSource createMergingDataSource(DataSource mainSource)
+    {
+        DataSource mergedDataSource = null;
+        Vector<DataSource> vDataSources = new Vector<DataSource>();
+        DataSource[] dataSources = null;
+        int count = 0;
+        for (int i = 0; i < otherCalls.length; i++)
+        {
+           if (null != otherCalls[i] &&
+               !callHandle.equals(otherCalls[i].getHandle()) &&
+               otherCalls[i].isConnected())
+           {
+               JmfPlugin mediaProvider = (JmfPlugin)otherCalls[i].getMediaProvider();
+               if (null != mediaProvider)
+               {
+                   count++;
+                   vDataSources.add(mediaProvider.getIncomingDataSource());
+               }
+           }
+        }
+        if (count > 0)
+        {
+            vDataSources.add(mainSource);
+            dataSources = new DataSource[vDataSources.size()];
+            vDataSources.copyInto(dataSources);
+            try
+            {
+                mergedDataSource = Manager.createMergingDataSource(dataSources);
+            }
+            catch (IncompatibleSourceException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        if (null != mergedDataSource)
+        {
+            try
+            {
+                mergedDataSource.connect();
+            }
+            catch (IOException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            try
+            {
+                mergedDataSource.start();
+            }
+            catch (IOException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return mergedDataSource;
+    }
+        
     private String createProcessor()
     {
         if (mediaSourceType == MediaSourceType.MEDIA_SOURCE_MICROPHONE)
         {
             try
             {
-                ds = javax.media.Manager.createDataSource(new MediaLocator(
-                        "javasound://8000"));
+                micSource = new MicrophoneSource();
+                ds = micSource;
+                ds.connect();
+                if (otherCalls != null)
+                {
+                    ds = this.createMergingDataSource(micSource);
+                }
             }
             catch (Exception e)
             {
@@ -269,21 +334,37 @@ public class Transmitter
         if (!atLeastOneTrack)
             return "Couldn't set any of the tracks to a valid RTP format";
 
-        Codec[] codecs = new Codec[3];
-        com.ibm.media.codec.audio.AudioPacketizer packetizer = null;
-
-        packetizer = new com.sun.media.codec.audio.ulaw.Packetizer();
-        ((com.sun.media.codec.audio.ulaw.Packetizer) packetizer)
-                .setPacketSize(160);
-
-        RateCvrt RateCvrt = new RateCvrt();
-        PCMToPCM pcmConvert = new PCMToPCM();
-
-        RateCvrt.setInputFormat(new Format(AudioFormat.LINEAR));
-        codecs[0] = RateCvrt;
-        codecs[1] = pcmConvert;
-        codecs[2] = packetizer;
-
+        Codec[] codecs = null;
+        
+        if (System.getProperty("os.name").toUpperCase().indexOf("MAC") > -1)
+        {
+            codecs = new Codec[2];
+        }
+        else
+        {
+            codecs = new Codec[1];
+        }
+        int codecIndex = 0;
+        if (System.getProperty("os.name").toUpperCase().indexOf("MAC") > -1)
+        {
+            codecIndex++;
+            com.ibm.media.codec.audio.rc.RCModule rcMod = new com.ibm.media.codec.audio.rc.RCModule();
+            RateCvrt rateconverter = new RateCvrt();
+            codecs[0] = rcMod;
+            
+            codecs[1] = new com.ibm.media.codec.audio.ulaw.JavaEncoder();
+        }
+        else
+        {
+            com.ibm.media.codec.audio.AudioPacketizer packetizer = null;
+    
+            packetizer = new com.sun.media.codec.audio.ulaw.Packetizer();
+            ((com.sun.media.codec.audio.ulaw.Packetizer) packetizer)
+                    .setPacketSize(160);
+    
+            codecs[codecIndex] = packetizer;
+        }
+        
         try
         {
             tracks[0].setCodecChain(codecs);
@@ -456,4 +537,5 @@ public class Transmitter
         }
     }
 
+    private long now() { return System.nanoTime() / 1000000; }
 }
