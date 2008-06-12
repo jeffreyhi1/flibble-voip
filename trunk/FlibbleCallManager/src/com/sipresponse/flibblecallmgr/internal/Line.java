@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -34,7 +34,7 @@ public class Line
     private String handle;
     private long lastRegisterTimestamp;
     private EventCode status;
-    private int registerPeriod = 3600;
+    private int registerPeriod = -1;
     private CallManager callMgr;
     private String password;
     

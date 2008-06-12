@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -18,8 +18,11 @@
  ******************************************************************************/
 package com.sipresponse.flibblecallmgr.internal.handlers;
 
+import java.util.Random;
+
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
+import javax.sip.header.ToHeader;
 import javax.sip.message.Response;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -71,7 +74,9 @@ public abstract class Handler extends SipMessageProcessor
         Response response = null;
         try
         {
-            response = flibbleProvider.messageFactory.createResponse(statusCode, requestEvent.getRequest());
+            response = flibbleProvider.messageFactory.createResponse(
+                    statusCode,
+                    requestEvent.getRequest());
         }
         catch (Exception e)
         {
@@ -80,8 +85,46 @@ public abstract class Handler extends SipMessageProcessor
         if (null != response)
         {
             ServerTransaction st = requestEvent.getServerTransaction();
+            if (null == st)
+            {
+                st = call.getServerTransaction();
+            }
+            int count = 0;
+            while (null == st && count < 40)
+            {
+                System.err.println("No server transaction for request: " + requestEvent.getRequest().toString());
+                count++;
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+                st = requestEvent.getServerTransaction();                
+            }
+            if (null == st)
+            {
+                System.err.println("COULD NOT GET server transaction for request: " + requestEvent.getRequest().toString());
+                return;
+            }
             try
             {
+                if (200 > statusCode)
+                {
+                    Random rand = new Random();
+                    rand.setSeed(System.currentTimeMillis());
+                    Long tag = new Long(Math.abs(rand.nextLong()));
+                    ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+                    if (toHeader.getTag() == null)
+                    {
+                        call.setToTag(tag.toString());
+                        toHeader.setTag(call.getToTag());   
+                    }
+                }
+                
+                System.out.println("Handler.sendResponse: " + response.toString());
                 st.sendResponse(response);
             }
             catch (Exception e)

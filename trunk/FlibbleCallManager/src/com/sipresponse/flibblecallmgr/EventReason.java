@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -35,9 +35,11 @@ public enum EventReason
     CALL_DISCONNECT_LOCAL,
     CALL_DISCONNECT_REMOTE,
     CALL_UNHOLD,
+    CALL_CANCELLED,
     
     // LINE REASONS
     LINE_NORMAL,
+    LINE_NETWORK,
     
     // MEDIA REAONS
     MEDIA_NORMAL

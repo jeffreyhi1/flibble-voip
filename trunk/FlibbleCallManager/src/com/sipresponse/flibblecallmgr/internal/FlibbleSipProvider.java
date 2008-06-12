@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -41,7 +41,6 @@ import javax.sip.SipListener;
 import javax.sip.SipProvider;
 import javax.sip.SipStack;
 import javax.sip.TimeoutEvent;
-import javax.sip.TransactionDoesNotExistException;
 import javax.sip.TransactionTerminatedEvent;
 import javax.sip.TransactionUnavailableException;
 import javax.sip.address.Address;
@@ -60,6 +59,7 @@ import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.internal.handlers.ByeHandler;
+import com.sipresponse.flibblecallmgr.internal.handlers.CancelHandler;
 import com.sipresponse.flibblecallmgr.internal.handlers.InviteHandler;
 import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
@@ -106,11 +106,11 @@ public class FlibbleSipProvider implements SipListener
         properties.setProperty("gov.nist.javax.sip.DEBUG_LOG",
                 "flibbleDebug.txt");
         properties.setProperty("gov.nist.javax.sip.SERVER_LOG", "flibble.txt");
-        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+        properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "0");
         // Drop the client connection after we are done with the transaction.
         properties.setProperty("gov.nist.javax.sip.CACHE_CLIENT_CONNECTIONS",
                 "false");
-        properties.setProperty("javax.sip.AUTOMATIC_DIALOG_SUPPORT", "on");
+        properties.setProperty("javax.sip.AUTOMATIC_DIALOG_SUPPORT", "ON");
 
         try
         {
@@ -130,8 +130,20 @@ public class FlibbleSipProvider implements SipListener
             headerFactory = sipFactory.createHeaderFactory();
             addressFactory = sipFactory.createAddressFactory();
             messageFactory = sipFactory.createMessageFactory();
-            udpListeningPoint = sipStack.createListeningPoint(callMgr
-                    .getLocalIp(), callMgr.getUdpSipPort(), "udp");
+            int count = 0;
+            while (udpListeningPoint == null && count < 10)
+            {
+                try
+                {
+                    udpListeningPoint = sipStack.createListeningPoint(callMgr.getLocalIp(), callMgr.getUdpSipPort(), "udp");
+                }
+                catch (InvalidArgumentException e)
+                {
+                    callMgr.setUdpSipPort(callMgr.getUdpSipPort()+2);
+                }
+                count++;
+            }
+            udpListeningPoint.setSentBy(callMgr.getContactIp() + ":" + callMgr.getUdpSipPort());
             sipProvider = sipStack.createSipProvider(udpListeningPoint);
             sipProvider.addSipListener(this);
         }
@@ -206,7 +218,7 @@ public class FlibbleSipProvider implements SipListener
 
     public ClientTransaction sendRequest(Request request)
     {
-        System.err.println("Sending request: " + request.toString());
+        //System.err.println("Sending request: " + request.toString());
         ClientTransaction ct = null;
         int tries = 0;
         try
@@ -255,6 +267,8 @@ public class FlibbleSipProvider implements SipListener
         try
         {
             ack = responseEvent.getDialog().createAck(cseq);
+            ViaHeader viaHeader = (ViaHeader)ack.getHeader(ViaHeader.NAME);
+            viaHeader.setRPort();
         }
         catch (InvalidArgumentException e)
         {
@@ -290,13 +304,31 @@ public class FlibbleSipProvider implements SipListener
 
     public void processRequest(RequestEvent requestEvent)
     {
+//        System.err.println("Received Request: "
+//                + requestEvent.getRequest().toString());
         String method = requestEvent.getRequest().getMethod();
 
+        Request request = requestEvent.getRequest();
+        if (request.getHeader(MaxForwardsHeader.NAME) == null)
+        {
+            MaxForwardsHeader maxForwardsHeader = null;
+            try
+            {
+                maxForwardsHeader = headerFactory.createMaxForwardsHeader(70);
+            }
+            catch (InvalidArgumentException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            request.addHeader(maxForwardsHeader);
+        }
         ServerTransaction st = requestEvent.getServerTransaction();
         if (st == null)
         {
             try
             {
+                //System.err.println("FlibbleSipProvider.processRequest.  Creating new server transaction");
                 st = sipProvider.getNewServerTransaction(requestEvent
                         .getRequest());
             }
@@ -331,6 +363,7 @@ public class FlibbleSipProvider implements SipListener
         }
         else if (method.equals(Request.CANCEL))
         {
+            new CancelHandler(callMgr, call, requestEvent).execute();
         }
         else if (method.equals(Request.NOTIFY))
         {
@@ -345,33 +378,38 @@ public class FlibbleSipProvider implements SipListener
 
     public void processResponse(ResponseEvent responseEvent)
     {
-        System.err.println("Received Response: "
-                + responseEvent.getResponse().toString());
+        //System.err.println("Received Response: "
+        //        + responseEvent.getResponse().toString());
         // find the client transaction signal for this response
-        Signal signal = signals.get(responseEvent.getClientTransaction());
-        Dialog dialog = responseEvent.getClientTransaction().getDialog();
-
-        if (dialog != null)
+        if (signals != null &&
+            responseEvent != null &&
+            responseEvent.getClientTransaction() != null)
         {
-            CallIdHeader callIdHeader = (CallIdHeader) responseEvent
-                    .getResponse().getHeader(CallIdHeader.NAME);
-            String callId = callIdHeader.getCallId();
-            Call call = InternalCallManager.getInstance().getCallById(callId);
-            if (null != call)
+            Signal signal = signals.get(responseEvent.getClientTransaction());
+            Dialog dialog = responseEvent.getClientTransaction().getDialog();
+    
+            if (dialog != null)
             {
-                call.setDialog(dialog);
+                CallIdHeader callIdHeader = (CallIdHeader) responseEvent
+                        .getResponse().getHeader(CallIdHeader.NAME);
+                String callId = callIdHeader.getCallId();
+                Call call = InternalCallManager.getInstance().getCallById(callId);
+                if (null != call)
+                {
+                    call.setDialog(dialog);
+                }
             }
-        }
-
-        if (null != signal)
-        {
-            signal.setResponseEvent(responseEvent);
-            signal.notifyResponseEvent();
-        }
-        else
-        {
-            System.err.println("Received response not waited on:\n"
-                    + responseEvent.getResponse().toString());
+    
+            if (null != signal)
+            {
+                signal.setResponseEvent(responseEvent);
+                signal.notifyResponseEvent();
+            }
+            else
+            {
+                System.err.println("Received response not waited on:\n"
+                        + responseEvent.getResponse().toString());
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -22,28 +22,39 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Enumeration;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
+import javax.media.CannotRealizeException;
+import javax.media.Control;
 import javax.media.ControllerEvent;
 import javax.media.ControllerListener;
 import javax.media.EndOfMediaEvent;
+import javax.media.GainControl;
 import javax.media.Manager;
 import javax.media.MediaLocator;
+import javax.media.NoPlayerException;
 import javax.media.Player;
+import javax.media.Time;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
+import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.media.FlibbleMediaProvider;
+import javax.media.protocol.DataSource;
 
 public class JmfPlugin extends FlibbleMediaProvider
 {
     private Receiver receiver;
-
+    private static Vector<Receiver> receivers = new Vector<Receiver>();
     private Transmitter transmitter;
 
     private CallManager callMgr;
@@ -55,11 +66,15 @@ public class JmfPlugin extends FlibbleMediaProvider
     private int destPort;
 
     private int srcPort;
+    private int playoutVolume;
 
     private MediaSourceType mediaSourceType;
 
     private String mediaFilename;
-
+    private static boolean echoSuppression;
+    private static float percentSuppress;
+    private ConcurrentHashMap<String, Player> playerMap = new ConcurrentHashMap<String, Player>();
+    private Vector<String> playerVector = new Vector<String>();
     private boolean loop;
 
     @Override
@@ -67,17 +82,16 @@ public class JmfPlugin extends FlibbleMediaProvider
             String callHandle, String address, int port)
     {
         receiver = new Receiver(callMgr, lineHandle, callHandle, address, port);
+        receiver.enableEchoSuppression(echoSuppression, percentSuppress);
+        receivers.add(receiver);
     }
-
-    @Override
-    public void startRtpReceive(String address, int port)
-    {
-    }
+    
 
     @Override
     public void stopRtpReceive(String address, int port)
     {
         receiver.stop();
+        receivers.remove(receiver);
     }
 
     @Override
@@ -93,8 +107,8 @@ public class JmfPlugin extends FlibbleMediaProvider
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         this.loop = loop;
-        transmitter = new Transmitter(callMgr, callHandle, destIp, destPort,
-                srcPort, mediaSourceType, mediaFilename, loop);
+        transmitter = new Transmitter(this, callMgr, callHandle, destIp, destPort,
+                srcPort, mediaSourceType, mediaFilename, loop, null);
     }
 
     @Override
@@ -102,8 +116,8 @@ public class JmfPlugin extends FlibbleMediaProvider
     {
         if (transmitter == null)
         {
-            transmitter = new Transmitter(callMgr, callHandle, destIp,
-                    destPort, srcPort, mediaSourceType, mediaFilename, loop);
+            transmitter = new Transmitter(this, callMgr, callHandle, destIp,
+                    destPort, srcPort, mediaSourceType, mediaFilename, loop, null);
         }
     }
 
@@ -127,8 +141,8 @@ public class JmfPlugin extends FlibbleMediaProvider
             this.mediaFilename = mediaFilename;
             this.loop = loop;
             transmitter.stop();
-            transmitter = new Transmitter(callMgr, callHandle, destIp,
-                    destPort, srcPort, mediaSourceType, mediaFilename, loop);
+            transmitter = new Transmitter(this, callMgr, callHandle, destIp,
+                    destPort, srcPort, mediaSourceType, mediaFilename, loop, null);
 
         }
     }
@@ -141,17 +155,12 @@ public class JmfPlugin extends FlibbleMediaProvider
         }
     }
 
-    private boolean isRingbackPlaying;
-    public void playFileLocally(URL url, boolean loop)
+    public void playFileLocally(URL url, boolean loop, int volume)
     {
         try
         {
-            if (!isRingbackPlaying)
-            {
-                System.out.println("Playing file locally: " + url.toString());
-                isRingbackPlaying = true;
-                playAudio(url.toString(), loop);
-            }
+            System.out.println("Playing file locally: " + url.toString());
+            playAudio(url.toString(), loop, volume);
         }
         catch (Exception e)
         {
@@ -160,35 +169,23 @@ public class JmfPlugin extends FlibbleMediaProvider
         }
     }
 
-    private Player p;
-    private void playAudio(final String filename, final boolean loop)
+    private void playAudio(final String filename, final boolean loop, final int volume)
     {
         try
         {
-            if (null == p)
+            this.playoutVolume = volume;
+            this.loop = loop;
+            final Player p = getPlayer(filename);
+            p.stop();
+            p.setMediaTime(new Time(0));
+            GainControl gc = (GainControl)p.getControl("javax.media.GainControl");
+            try
             {
-                p = Manager.createRealizedPlayer(new MediaLocator(filename));
-                p.addControllerListener(
-                        new ControllerListener()
-                        {
-    
-                            public void controllerUpdate(ControllerEvent evt)
-                            {
-                                if (evt instanceof EndOfMediaEvent && 
-                                        isRingbackPlaying  &&
-                                        loop)
-                                {
-                                    playAudio(filename, loop);
-                                }
-                                else if (evt instanceof EndOfMediaEvent && 
-                                        isRingbackPlaying)
-                                {
-                                    isRingbackPlaying = false;
-                                }
-                            }
-                            
-                        }
-                        );
+                gc.setLevel((float)volume / 127.0f);
+            }
+            catch (Exception e)
+            {
+                
             }
             p.start();
         }
@@ -197,12 +194,163 @@ public class JmfPlugin extends FlibbleMediaProvider
             e.printStackTrace();
         }
     }
+    private Player getPlayer(final String filename)
+    {
+        Player p = playerMap.get(filename);
+        if (null == p)
+        {
+            try
+            {
+                p = Manager.createRealizedPlayer(new MediaLocator(filename));
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+            playerMap.put(filename, p);
+            playerVector.add(filename.toString());
+            p.addControllerListener(
+                    new ControllerListener()
+                    {
+                        public void controllerUpdate(ControllerEvent evt)
+                        {
+                            System.out.println("playAudio:  ControllerEvent: " + evt);
+                            if (evt instanceof EndOfMediaEvent && 
+                                    loop)
+                            {
+                                EndOfMediaEvent endEvent = (EndOfMediaEvent)evt;
+                                Player p = (Player) evt.getSource();
+                                if (p != null)
+                                {
+                                    // System.err.pringln("ABOUT TO STOP")
+                                    p.stop();
+                                    System.err.println("ABOUT TO SET MEDIA TIME");
+                                    p.setMediaTime(new Time(0));
+                                    System.err.println("processing = false");
+                                    System.err.println("ABOUT TO PLAY AUDIO");
+                                    playAudio(filename, loop, playoutVolume);
+                                }
+                            }
+                            else if (evt instanceof EndOfMediaEvent && 
+                                    !loop)
+                            {
+                            }
+                        }
+                        
+                    }
+                );
+        }      
+        return p;
+    }
 
     @Override
-    public void stopFileLocally()
+    public void stopFileLocally(URL filename)
     {
-        p.stop();
-        p = null;
-        isRingbackPlaying = false;
+        System.err.println("Stopping file playout: " + filename.toString());
+        Player p = playerMap.get(filename.toString());
+        if (null == p)
+        {
+            return;
+        }
+        System.out.println("Stop file locally ");
+        if (null != p)
+        {
+            try
+            {
+                loop = false;
+                p.stop();
+                p.close();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();   
+            }
+            playerMap.remove(filename.toString());
+            playerVector.remove(filename.toString());
+        }
     }
+
+    @Override
+    public void stopLocalPlayoutAll()
+    {
+        for (int i = 0; i < playerVector.size(); i++)
+        {
+            try
+            {
+                stopFileLocally( new URL(playerVector.get(i)) );
+            }
+            catch (MalformedURLException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void joinOtherCallsWithDataSource(Call call, Call[] otherCalls)
+    {
+        if (transmitter != null)
+        {
+            transmitter.stop();
+            transmitter = null;
+        }
+        transmitter = new Transmitter(this, callMgr, callHandle, destIp, destPort,
+                srcPort, mediaSourceType, mediaFilename, loop, otherCalls);
+    }
+    
+    public DataSource getIncomingDataSource()
+    {
+        if (null == receiver)
+            return null;
+        return receiver.getDataSource();
+    }
+
+
+    @Override
+    public void setVolume(int volume)
+    {
+        this.playoutVolume = volume;
+        if (receiver != null)
+        {
+            receiver.setVolume(volume);
+        }
+        Player p = null;
+        Enumeration<Player> enumer = playerMap.elements();
+        if (null != enumer)
+        {
+            while (enumer.hasMoreElements())
+            {
+                p = enumer.nextElement();
+                GainControl gc = (GainControl)p.getControl(GainControl.class.getName());
+                if (gc != null)
+                {
+                    gc.setLevel((float) ((float)volume / 127.0f));
+                }
+
+            }
+            
+        }
+        
+    }
+
+    @Override
+    public void setMicrophoneGain(int gain)
+    {
+        MicrophoneThread.getInstance().setGain(gain);        
+    }
+
+
+    @Override
+    public void enableEchoSuppression(boolean enable, float percentSuppression)
+    {
+        echoSuppression = enable;
+        percentSuppress = percentSuppression;
+        for (Receiver r : receivers)
+        {
+            r.enableEchoSuppression(enable, percentSuppression);
+        }
+    }
+    
+    
 }

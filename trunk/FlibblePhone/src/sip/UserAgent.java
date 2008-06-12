@@ -29,6 +29,7 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
+import com.sipresponse.flibblecallmgr.FlibbleResult;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 
@@ -58,14 +59,17 @@ public class UserAgent implements FlibbleListener
             Settings.getInstance().load();
             try
             {
-                callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),  // address to bind to
-                        5060, // port to bind to 
-                        9300, // start media port range
-                        9400, // end media port range
-                        Settings.getInstance().getProxy(), // proxy address
-                        5060, // proxy port
-                        null, // stun server
-                        true, // use sound card
+                String ipAddressToUse = CallManager.AUTO_DISCOVER;            	
+                FlibbleResult res = callMgr.initialize(ipAddressToUse,
+                        5060,// port to bind to 
+                        8000,// start media port range
+                        8020,// end media port range
+                        "sphone.vopr.vonage.net",// domain
+                        "sphone.vopr.vonage.net",// proxy address
+                        5060,// proxy port
+                        null,// stun server
+                        "Flibble UA",
+                        true,
                         null);
             }
             catch (Exception e)
@@ -113,7 +117,7 @@ public class UserAgent implements FlibbleListener
 
     public void answerCall()
     {
-        callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false);
+        callMgr.answerCall(callHandle, MediaSourceType.MEDIA_SOURCE_MICROPHONE, null, false, 50, 50);
     }
     
     public static boolean isDigits(final String word)
@@ -138,7 +142,9 @@ public class UserAgent implements FlibbleListener
             callMgr.placeCall(callHandle,
                     MediaSourceType.MEDIA_SOURCE_MICROPHONE,
                     null,
-                    false);
+                    false,
+                    50,
+                    50);
         }
         else
         {

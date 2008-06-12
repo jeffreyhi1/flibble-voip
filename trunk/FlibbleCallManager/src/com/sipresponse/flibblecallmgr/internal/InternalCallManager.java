@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -27,6 +27,8 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
 import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.internal.net.StunDiscovery;
+import com.sipresponse.flibblecallmgr.internal.util.HostPort;
 
 public class InternalCallManager
 {
@@ -47,7 +49,7 @@ public class InternalCallManager
     private ConcurrentHashMap<String, CallData> callDataMap = 
         new ConcurrentHashMap<String, CallData>();
     private int handleCounter = 0;
-    private String mediaPluginClass;
+    private String mediaPluginClass = "com.sipresponse.flibblecallmgr.plugin.jmf.JmfPlugin";
     
     private static InternalCallManager instance;
     public synchronized static InternalCallManager getInstance()
@@ -94,6 +96,8 @@ public class InternalCallManager
         mediaSocketManagers.put(callManager, mediaSocketManager);
     }
     
+    private Event lastEvent;
+    private CallManager lastCallManager;
     public void fireEvent(CallManager callManager, Event event)
     {
         synchronized (vectorSync)
@@ -179,8 +183,13 @@ public class InternalCallManager
     public void removeCallByHandle(String callHandle)
     {
         Call call = handleMap.get(callHandle);
+        
+        StunDiscovery.getInstance().removeBinding(new HostPort(call.getCallMgr().getLocalIp(), call.getLocalSdpPort()));
         handleMap.remove(callHandle);
-        callIdMap.remove(call.getCallId());
+        if (call != null && call.getCallId() != null)
+        {
+            callIdMap.remove(call.getCallId());
+        }
         callDataMap.remove(callHandle);
     }
     

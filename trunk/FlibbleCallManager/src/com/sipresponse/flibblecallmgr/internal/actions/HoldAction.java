@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -31,6 +31,7 @@ import javax.sip.address.SipURI;
 import javax.sip.header.ContactHeader;
 import javax.sip.header.ContentLengthHeader;
 import javax.sip.header.ContentTypeHeader;
+import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
 
 import com.sipresponse.flibblecallmgr.CallManager;
@@ -44,22 +45,30 @@ import com.sipresponse.flibblecallmgr.internal.FlibbleSipProvider;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.LineManager;
+import com.sipresponse.flibblecallmgr.internal.media.MediaSocketManager;
+import com.sipresponse.flibblecallmgr.internal.util.AuthenticationHelper;
 
 public class HoldAction extends ActionThread
 {
     private boolean hold;
-
-    public HoldAction(CallManager callMgr, Call call, boolean hold)
+    private int volume;
+    public HoldAction(CallManager callMgr, Call call, boolean hold,
+            int volume)
     {
         super(callMgr, call, null);
         this.callMgr = callMgr;
         this.call = call;
         this.hold = hold;
+        this.volume = volume;
     }
 
     public void run()
     {
         doHold();
+        if (signal != null)
+        {
+            signal.notifyResponseEvent();
+        }
     }
 
     public void doHold()
@@ -68,11 +77,20 @@ public class HoldAction extends ActionThread
                 .getProvider(callMgr);
         Dialog dialog = call.getDialog();
         Request reinvite = null;
+        SessionDescription localSdp = null;
+        ContentTypeHeader contentTypeHeader = null;
+        ContentLengthHeader contentLengthHeader = null;
+        
         try
         {
             reinvite = dialog.createRequest(Request.INVITE);
-            LineManager lineMgr = InternalCallManager.getInstance().getLineManager(
-                    callMgr);            Line fromLine = lineMgr.getLine(call.getLineHandle());
+            ViaHeader viaHeader = (ViaHeader) reinvite
+                    .getHeader(ViaHeader.NAME);
+            viaHeader.setRPort();
+
+            LineManager lineMgr = InternalCallManager.getInstance()
+                    .getLineManager(callMgr);
+            Line fromLine = lineMgr.getLine(call.getLineHandle());
             String fromUser = fromLine.getUser();
             SipURI contactUri = flibbleProvider.addressFactory.createSipURI(
                     fromUser, callMgr.getContactIp());
@@ -80,19 +98,23 @@ public class HoldAction extends ActionThread
                     .createAddress(contactUri);
             ((SipURI) contactAddress.getURI()).setPort(callMgr.getUdpSipPort());
             ContactHeader contactHeader = flibbleProvider.headerFactory
-                    .createContactHeader(contactAddress);            
+                    .createContactHeader(contactAddress);
             reinvite.setHeader(contactHeader);
             // create a _copy_ of the sdp
-            SessionDescription localSdp =(SessionDescription) SdpFactory.getInstance().createSessionDescription(call.getLocalSdp().toString());
+            localSdp = (SessionDescription) SdpFactory.getInstance()
+                    .createSessionDescription(call.getLocalSdp().toString());
             if (true == hold)
             {
-                //localSdp.getOrigin().setAddress("0.0.0.0");
+                // localSdp.getOrigin().setAddress("0.0.0.0");
                 localSdp.getConnection().setAddress("0.0.0.0");
             }
-            ContentTypeHeader contentTypeHeader = null;
-            ContentLengthHeader contentLengthHeader = null;
+            else
+            {
+                localSdp.getConnection().setAddress(callMgr.getContactIp());
+            }
             try
             {
+                
                 contentTypeHeader = flibbleProvider.headerFactory
                         .createContentTypeHeader("application", "sdp");
                 contentLengthHeader = flibbleProvider.headerFactory
@@ -113,6 +135,7 @@ public class HoldAction extends ActionThread
             {
                 e.printStackTrace();
             }
+
         }
         catch (Exception e)
         {
@@ -131,40 +154,80 @@ public class HoldAction extends ActionThread
             }
             ResponseEvent responseEvent = flibbleProvider
                     .waitForResponseEvent(ct);
-            while (responseEvent.getResponse().getStatusCode() < 200)
+            int statusCode = responseEvent.getResponse().getStatusCode();
+            ;
+            System.err.println("ReinviteStatus code = " + statusCode);
+            int count = 0;
+            while (statusCode != 200 && count < 10)
             {
-                responseEvent = flibbleProvider
-                    .waitForResponseEvent(ct);
+
+                count++;
+                if (statusCode == 401 || statusCode == 403 || statusCode == 407)
+                {
+                    // ack 1st trans
+                    flibbleProvider.ackResponse(responseEvent);
+                    Request reinviteWithAuth = null;
+                    try
+                    {
+                        reinviteWithAuth = dialog.createRequest(Request.INVITE);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    AuthenticationHelper.processResponseAuthorization(callMgr,
+                            line, responseEvent.getResponse(),
+                            reinviteWithAuth, true);
+
+                    try
+                    {
+                        reinviteWithAuth.setContent(localSdp.toString(),
+                                contentTypeHeader);
+                    }
+                    catch (ParseException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    ct = flibbleProvider.sendDialogRequest(dialog,
+                            reinviteWithAuth);
+                }
+
+                responseEvent = flibbleProvider.waitForResponseEvent(ct);
+                statusCode = responseEvent.getResponse().getStatusCode();
+                ;
+                System.err.println("ReinviteStatus code = " + statusCode);
             }
+
             // response should be 200
-            if (responseEvent != null &&
-                    responseEvent.getResponse() != null &&
-                    (responseEvent.getResponse().getStatusCode()<400 ))
+            if (responseEvent != null && responseEvent.getResponse() != null)
             {
                 System.err.println("Acking hold/unhold response");
-                flibbleProvider.ackResponse(responseEvent);
-                
-                if (hold == true)
+                if (signal != null)
                 {
-                    String remoteSdpIp = call.getRemoteSdpAddress();
-                    int remoteSdpPort = call.getRemoteSdpPort();
-                    call.getMediaProvider().stopRtpSend(remoteSdpIp, remoteSdpPort);
-                    InternalCallManager.getInstance().fireEvent(
-                            this.callMgr,
-                            new Event(EventType.CALL,
-                                    EventCode.CALL_HOLDING_REMOTE_PARTY,
-                                    EventReason.CALL_NORMAL,
-                                    line.getHandle(),
-                                    call.getHandle()));
+                    signal.notifyResponseEvent();
                 }
-                else
+                flibbleProvider.ackResponse(responseEvent);
+                if (hold == false)
                 {
+
+                    call.createMediaProvider();
+                    int receivePort = InternalCallManager.getInstance().getMediaSocketManager(callMgr).getNextAvailablePort();
+                    call.setLocalSdpPort(receivePort);
+                    call.getMediaProvider().initializeRtpReceive(callMgr,
+                            call.getLineHandle(),
+                            call.getHandle(), callMgr.getLocalIp(),
+                            receivePort);
+                    call.getMediaProvider().setVolume(volume);
                     SessionDescription remoteSdp = null;
                     if (null != responseEvent.getResponse().getRawContent())
                     {
                         try
                         {
-                            remoteSdp = SdpFactory.getInstance().createSessionDescription(new String(responseEvent.getResponse().getRawContent()));
+                            remoteSdp = SdpFactory.getInstance()
+                                    .createSessionDescription(
+                                            new String(responseEvent
+                                                    .getResponse()
+                                                    .getRawContent()));
                         }
                         catch (SdpParseException e)
                         {
@@ -176,29 +239,49 @@ public class HoldAction extends ActionThread
                         }
                     }
                     String remoteSdpIp = null;
-                    remoteSdpIp = call.getRemoteSdpAddress();
+                    remoteSdpIp = call.getRemoteSdpAddress();             
                     int remoteSdpPort = call.getRemoteSdpPort();
-                    call.getMediaProvider().startRtpSend(remoteSdpIp, remoteSdpPort);
+                    
+                    call.getMediaProvider().initializeRtpSend(callMgr,
+                            call.getHandle(),
+                            call.getRemoteSdpAddress(),
+                            call.getRemoteSdpPort(),
+                            receivePort,
+                            MediaSourceType.MEDIA_SOURCE_MICROPHONE,
+                            null,
+                            false);
+
+                    call.getMediaProvider().startRtpSend(remoteSdpIp,
+                            remoteSdpPort);
+
+                    InternalCallManager.getInstance().fireEvent(
+                            this.callMgr,
+                            new Event(EventType.CALL, EventCode.CALL_CONNECTED,
+                                    EventReason.CALL_UNHOLD, line.getHandle(),
+                                    call.getHandle()));
+                }
+                else if (hold == true)
+                {
+                    String remoteSdpIp = call.getRemoteSdpAddress();
+                    int remoteSdpPort = call.getRemoteSdpPort();
+
+                    call.getMediaProvider().stopRtpReceive(call.getLocalSdpAddress(), call.getLocalSdpPort());
+                    call.getMediaProvider().stopRtpSend(remoteSdpIp, remoteSdpPort);
+        
                     InternalCallManager.getInstance().fireEvent(
                             this.callMgr,
                             new Event(EventType.CALL,
-                                    EventCode.CALL_CONNECTED,
-                                    EventReason.CALL_UNHOLD,
-                                    line.getHandle(),
-                                    call.getHandle()));
+                                    EventCode.CALL_HOLDING_REMOTE_PARTY,
+                                    EventReason.CALL_NORMAL, line.getHandle(), call
+                                            .getHandle()));
                 }
             }
-            else
-            {
-                System.err.println("Acking hold/unhold response");
-                flibbleProvider.ackResponse(responseEvent);
-                InternalCallManager.getInstance().fireEvent(this.callMgr, 
-                        new Event(EventType.CALL,
-                                  EventCode.CALL_HOLD_FAILED,
-                                  EventReason.CALL_FAILURE_REJECTED,
-                                  line.getHandle(),
-                                  call.getHandle()));
-            }
         }
+
+    }
+
+    private String now()
+    {
+        return new Long(System.nanoTime() / 1000000).toString() + ": ";
     }
 }

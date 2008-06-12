@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -23,11 +23,12 @@ import com.sipresponse.flibblecallmgr.internal.Call;
 import com.sipresponse.flibblecallmgr.internal.InternalCallManager;
 import com.sipresponse.flibblecallmgr.internal.Line;
 import com.sipresponse.flibblecallmgr.internal.SipMessageProcessor;
+import com.sipresponse.flibblecallmgr.internal.util.Signal;
 
 public class ActionThread extends SipMessageProcessor
 {
     protected int timeout = 4000;
-    
+    protected Signal signal;
     protected ActionThread(CallManager callMgr, Call call, Line line)
     {
         this.callMgr = callMgr;
@@ -56,6 +57,10 @@ public class ActionThread extends SipMessageProcessor
     public void setTimeout(int timeout)
     {
         this.timeout = timeout;
+    }
+    public void setNotifier(Signal signal)
+    {
+       this.signal = signal;
     }
     
 }

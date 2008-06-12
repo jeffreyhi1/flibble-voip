@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -54,17 +54,23 @@ public class AnswerCallAction extends ActionThread
     private FlibbleSipProvider flibbleProvider;
     private FlibbleMediaProvider mediaProvider;
     private boolean loop;
+    private int initialVolume;
+    private int initialGain;
     
     public AnswerCallAction(CallManager callMgr,
             Call call,
             MediaSourceType mediaSourceType,
             String mediaFilename,
-            boolean loop)
+            boolean loop,
+            int initialVolume,
+            int initialGain)
     {
         super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         this.loop = loop;
+        this.initialVolume = initialVolume;
+        this.initialGain = initialGain;
         flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
     }
@@ -206,7 +212,8 @@ public class AnswerCallAction extends ActionThread
                     this.call.getHandle(),
                     callMgr.getLocalIp(),
                     receivePort);
-            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
+            mediaProvider.setVolume(initialVolume);
+            call.setVolume(initialVolume);
         }
     }
     
@@ -224,7 +231,7 @@ public class AnswerCallAction extends ActionThread
                     mediaSourceType,
                     mediaFilename,
                     loop);
-            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
+            mediaProvider.setMicrophoneGain(initialGain);
         }
     }
     

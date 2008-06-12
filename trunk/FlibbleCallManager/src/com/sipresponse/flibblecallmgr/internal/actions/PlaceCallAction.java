@@ -1,6 +1,6 @@
 /*******************************************************************************
- *   Copyright 2007 SIP Response
- *   Copyright 2007 Michael D. Cohen
+ *   Copyright 2007-2008 SIP Response
+ *   Copyright 2007-2008 Michael D. Cohen
  *
  *      mike _AT_ sipresponse.com
  *
@@ -22,6 +22,7 @@ import gov.nist.javax.sip.Utils;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import javax.sdp.SdpFactory;
 import javax.sdp.SessionDescription;
@@ -38,6 +39,7 @@ import javax.sip.header.ContentTypeHeader;
 import javax.sip.header.FromHeader;
 import javax.sip.header.MaxForwardsHeader;
 import javax.sip.header.ToHeader;
+import javax.sip.header.UserAgentHeader;
 import javax.sip.header.ViaHeader;
 import javax.sip.message.Request;
 
@@ -66,17 +68,23 @@ public class PlaceCallAction extends ActionThread
     private String destIp;
     private int destPort;
     private boolean loop;
+    private int initialVolume;
+    private int initialGain;
     
     public PlaceCallAction(CallManager callMgr,
             Call call,
             MediaSourceType mediaSourceType,
             String mediaFilename,
-            boolean loop)
+            boolean loop,
+            int initialVolume,
+            int initialGain)
     {
         super(callMgr, call, null);
         this.mediaSourceType = mediaSourceType;
         this.mediaFilename = mediaFilename;
         this.loop = loop;
+        this.initialVolume = initialVolume;
+        this.initialGain = initialGain;
         flibbleProvider = InternalCallManager.getInstance()
                 .getProvider(callMgr);
     }
@@ -100,6 +108,7 @@ public class PlaceCallAction extends ActionThread
             Request request = createRequest();
             setContent(request);
             ClientTransaction ct = flibbleProvider.sendRequest(request);
+            call.setClientTransaction(ct);
             ResponseEvent responseEvent = flibbleProvider
                     .waitForResponseEvent(ct);
             if (null == responseEvent)
@@ -112,7 +121,22 @@ public class PlaceCallAction extends ActionThread
                 int statusCode = responseEvent.getResponse().getStatusCode();
                 while (true)
                 {
-                    if (statusCode >= 500)
+                    if (100 == statusCode)
+                    {
+                        System.err.println("Firing Trying");
+                        InternalCallManager.getInstance().fireEvent(
+                                this.callMgr,
+                                new Event(EventType.CALL,
+                                        EventCode.CALL_TRYING,
+                                        EventReason.CALL_NORMAL,
+                                        line.getHandle(),
+                                        call.getHandle()));   
+                        responseEvent = flibbleProvider
+                            .waitForResponseEvent(ct);                        
+                        statusCode = responseEvent.getResponse().getStatusCode();
+                        continue;
+                    }
+                    else if (statusCode >= 500)
                     {
                         EventReason eventReason = EventReason.CALL_FAILURE_NETWORK;
                         InternalCallManager.getInstance().fireEvent(
@@ -133,9 +157,19 @@ public class PlaceCallAction extends ActionThread
                                 true);
                         setContent(inviteWithAuth);
                         ct = flibbleProvider.sendRequest(inviteWithAuth);
+                        call.setClientTransaction(ct);
                         responseEvent = flibbleProvider.waitForResponseEvent(ct);
                         statusCode = responseEvent.getResponse().getStatusCode();
                         continue;
+                    }
+                    else if (statusCode == 487)
+                    {
+                        InternalCallManager.getInstance().fireEvent(this.callMgr, new Event(EventType.CALL,
+                                EventCode.CALL_DISCONNECTED,
+                                EventReason.CALL_CANCELLED,
+                                line.getHandle(),
+                                call.getHandle()));
+                        break;
                     }
                     else if (statusCode > 400)
                     {
@@ -167,6 +201,7 @@ public class PlaceCallAction extends ActionThread
                                         call.getHandle()));
                         responseEvent = flibbleProvider
                                 .waitForResponseEvent(ct);
+                        statusCode = responseEvent.getResponse().getStatusCode();
                     }
                     else if (statusCode < 200)
                     {
@@ -245,7 +280,7 @@ public class PlaceCallAction extends ActionThread
                 callMgr);
         Line fromLine = lineMgr.getLine(call.getLineHandle());
         String fromUser = fromLine.getUser();
-        String fromHost = fromLine.getHost();
+        String fromHost = callMgr.getDomain();
         String fromDisplayName = fromLine.getDisplayName();
         Request request = null;
 
@@ -282,11 +317,23 @@ public class PlaceCallAction extends ActionThread
 
             // Create ViaHeaders
             ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
-            ViaHeader viaHeader = flibbleProvider.headerFactory
-                    .createViaHeader(callMgr.getLocalIp(), sipProvider
-                            .getListeningPoint("udp").getPort(), "udp", null);
             // add via headers
-            viaHeaders.add(viaHeader);
+            if (callMgr.getPublicIp() != null)
+            {
+                ViaHeader publicViaHeader = flibbleProvider.headerFactory
+                        .createViaHeader(callMgr.getPublicIp(), sipProvider
+                                .getListeningPoint("udp").getPort(), "udp", null);
+                publicViaHeader.setRPort();
+                viaHeaders.add(publicViaHeader);
+            }
+            else
+            {
+                ViaHeader viaHeader = flibbleProvider.headerFactory
+                        .createViaHeader(callMgr.getLocalIp(), sipProvider
+                                .getListeningPoint("udp").getPort(), "udp", null);
+                viaHeader.setRPort();
+                viaHeaders.add(viaHeader);
+            }
 
             // Create a new CallId header
             CallIdHeader callIdHeader = flibbleProvider.headerFactory
@@ -305,6 +352,23 @@ public class PlaceCallAction extends ActionThread
                     Request.INVITE, callIdHeader, cSeqHeader, fromHeader,
                     toHeader, viaHeaders, maxForwards);
             request.setHeader(contactHeader);
+            
+            UserAgentHeader uaHeader = null;
+            Vector<String> uaList = new Vector<String>();
+            uaList.add(callMgr.getUserAgent());
+            try
+            {
+                uaHeader = flibbleProvider.headerFactory.createUserAgentHeader(uaList);
+            }
+            catch (ParseException e1)
+            {
+                e1.printStackTrace();
+            }
+            if (null != uaHeader)
+            {
+                request.addHeader(uaHeader);
+            }
+            
         }
         catch (Exception e)
         {
@@ -326,7 +390,8 @@ public class PlaceCallAction extends ActionThread
                     this.call.getHandle(),
                     callMgr.getLocalIp(),
                     receivePort);
-            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
+            mediaProvider.setVolume(initialVolume);
+            call.setVolume(initialVolume);
         }
     }
     
@@ -345,8 +410,8 @@ public class PlaceCallAction extends ActionThread
                     mediaSourceType,
                     mediaFilename,
                     loop);
-            mediaProvider.startRtpReceive(callMgr.getLocalIp(), receivePort);
-        }
+            mediaProvider.setMicrophoneGain(initialGain);
+        };
     }
     
 }

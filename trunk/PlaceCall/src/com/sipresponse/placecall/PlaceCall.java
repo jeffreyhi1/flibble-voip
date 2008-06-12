@@ -26,6 +26,7 @@ import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
 import com.sipresponse.flibblecallmgr.EventType;
 import com.sipresponse.flibblecallmgr.FlibbleListener;
+import com.sipresponse.flibblecallmgr.FlibbleResult;
 import com.sipresponse.flibblecallmgr.MediaSourceType;
 
 public class PlaceCall implements FlibbleListener
@@ -40,15 +41,18 @@ public class PlaceCall implements FlibbleListener
     {
         try
         {
-            callMgr.initialize(InetAddress.getLocalHost().getHostAddress(),  // address to bind to
-                    5060, // port to bind to 
-                    9300, // start media port range
-                    9400, // end media port range
-                    "sphone.vopr.vonage.net", // proxy address
-                    5060, // proxy port
-                    null, // stun server
-                    true, // use sound card
-                    null); // media filename
+            String ipAddressToUse = CallManager.AUTO_DISCOVER;
+            FlibbleResult res = callMgr.initialize(ipAddressToUse,
+                    5060,// port to bind to 
+                    8000,// start media port range
+                    8020,// end media port range
+                    "sphone.vopr.vonage.net",// domain
+                    "sphone.vopr.vonage.net",// proxy address
+                    5060,// proxy port
+                    null,// stun server
+                    "PlaceCall UA",
+                    true,
+                    null);
             callMgr.addListener(this);  // this class implements the FlibbleListener interface
         }
         catch (Exception e1)
@@ -120,7 +124,9 @@ public class PlaceCall implements FlibbleListener
                     callMgr.placeCall(callHandle,
                             MediaSourceType.MEDIA_SOURCE_MICROPHONE,
                             null,
-                            false);
+                            false,
+                            50,
+                            50);
                 }
             }
         }
