@@ -1,14 +1,38 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
 <jardesc>
-    <jar path="C:/dev/flibble-voip/flibbleCallMgr_0_1_0122-src.zip"/>
-    <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/FlibbleCallManager/flibbleflibbleCallMgr-src.jardesc" useSourceFolders="true" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
-    <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
+    <jar path="C:/flibble-voip/flibbleCallMgr_0_2_0148-src.zip"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/FlibbleCallManager/flibbleCallMgr-src.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="true"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
-    <selectedElements exportClassFiles="false" exportOutputFolder="false" exportJavaFiles="true">
-        <folder path="/FlibbleCallManager/doc"/>
-        <javaElement handleIdentifier="=FlibbleCallManager/src"/>
-        <javaElement handleIdentifier="=FlibbleCallManager/test"/>
+    <selectedElements exportClassFiles="false" exportJavaFiles="true" exportOutputFolder="false">
         <file path="/FlibbleCallManager/build.xml"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{SpeakerLevelMonitor.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{SendAdapter.java"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal.net"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/test&lt;com.sipresponse.flibblecallmgr{CallManagerTest.java"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal.actions"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal.util"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{EchoSuppressor.java"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{Transmitter.java"/>
         <file path="/FlibbleCallManager/.classpath"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{CustomSoundOutput.java"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{MicrophoneStream.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{MicrophoneListener.java"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal.media"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{ReceiveAdapter.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{MicrophoneThread.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{MicrophoneSource.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{Receiver.java"/>
+        <javaElement handleIdentifier="=PlaceCall/src&lt;com.sipresponse.placecall{PlaceCall.java"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{CustomSoundRenderer.java"/>
+        <file path="/ReceiveCall/resource/test2.wav"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse.flibblecallmgr.internal.handlers"/>
+        <javaElement handleIdentifier="=MediaPlugin_JMF/src&lt;com.sipresponse.flibblecallmgr.plugin.jmf{JmfPlugin.java"/>
+        <file path="/ReceiveCall/resource/test.wav"/>
+        <javaElement handleIdentifier="=FlibbleCallManager/src&lt;com.sipresponse"/>
+        <javaElement handleIdentifier="=ReceiveCall/src&lt;com.sipresponse.receivecall{ReceiveCall.java"/>
     </selectedElements>
 </jardesc>

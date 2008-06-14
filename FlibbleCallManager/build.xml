@@ -6,14 +6,14 @@
               as the first entry and export the buildfile again. -->
 <project basedir="." default="build" name="FlibbleCallManager">
     <property environment="env"/>
+    <property name="FlibblePhone.location" value="../FlibblePhone"/>
     <property name="MediaPlugin_JMF.location" value="../MediaPlugin_JMF"/>
     <property name="PlaceCall.location" value="../PlaceCall"/>
     <property name="ReceiveCall.location" value="../ReceiveCall"/>
-    <property name="ECLIPSE_HOME" value="../../../Program Files/eclipse"/>
-    <property name="junit.output.dir" value="junit"/>
+    <property name="ECLIPSE_HOME" value="../../Program Files/eclipse3.3"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.5"/>
-    <property name="source" value="1.5"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
     <path id="FlibbleCallManager.classpath">
         <pathelement location="bin"/>
         <pathelement location="lib/log4j-1.2.8.jar"/>
@@ -24,7 +24,8 @@
         <pathelement location="lib/JainSipRi1.2.jar"/>
         <pathelement location="lib/nist-sdp-1.0.jar"/>
         <pathelement location="lib/sip-sdp.jar"/>
-        <pathelement location="lib/jstun-0.6.1.jar"/>
+        <pathelement location="lib/commons-httpclient-3.1.jar"/>
+        <pathelement location="lib/Stun4J.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -35,6 +36,15 @@
             <fileset dir="test" excludes="**/*.launch, **/*.java"/>
         </copy>
     </target>
+	<target name="zip-src">
+		  <zip destfile="flibbleCallMgr_0_2_0149-src.zip">
+		  	<zipfileset dir="src" excludes="**/.svn/**"/>
+		  	<zipfileset dir="../MediaPlugin_JMF/src" excludes="**/.svn/**"/>
+		  	<zipfileset dir="../PlaceCall/src" excludes="**/.svn/**"/>
+		  	<zipfileset dir="../ReceiveCall/src" excludes="**/.svn/**"/>
+		  	<zipfileset dir="../ReceiveCall/resource" excludes="**/.svn/**"/>
+      	</zip>
+ 	</target>
     <target name="clean">
         <delete dir="bin"/>
     </target>
@@ -53,6 +63,12 @@
         </javac>
     </target>
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
+        <ant antfile="${FlibblePhone.location}/build.xml" inheritAll="false" target="clean"/>
+        <ant antfile="${FlibblePhone.location}/build.xml" inheritAll="false" target="build">
+            <propertyset>
+                <propertyref name="build.compiler"/>
+            </propertyset>
+        </ant>
         <ant antfile="${MediaPlugin_JMF.location}/build.xml" inheritAll="false" target="clean"/>
         <ant antfile="${MediaPlugin_JMF.location}/build.xml" inheritAll="false" target="build">
             <propertyset>
@@ -84,21 +100,5 @@
     <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
-    </target>
-    <target name="FlibbleCallManager">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="com.sipresponse.flibblecallmgr.CallManagerTest" todir="${junit.output.dir}"/>
-            <classpath refid="FlibbleCallManager.classpath"/>
-        </junit>
-    </target>
-    <target name="junitreport">
-        <junitreport todir="${junit.output.dir}">
-            <fileset dir="${junit.output.dir}">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.output.dir}"/>
-        </junitreport>
     </target>
 </project>
