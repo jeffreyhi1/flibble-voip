@@ -2,8 +2,7 @@
 
 = Introduction =
 
-PlaceCall source below:
-
+Placing a call with flibble-voip:
 = Details =
 
 {{{
