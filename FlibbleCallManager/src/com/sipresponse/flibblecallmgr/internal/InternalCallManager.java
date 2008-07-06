@@ -50,6 +50,7 @@ public class InternalCallManager
         new ConcurrentHashMap<String, CallData>();
     private int handleCounter = 0;
     private String mediaPluginClass = "com.sipresponse.flibblecallmgr.plugin.jmf.JmfPlugin";
+    private String voiceRecognitionPluginClass;
     
     private static InternalCallManager instance;
     public synchronized static InternalCallManager getInstance()
@@ -212,6 +213,10 @@ public class InternalCallManager
     public void setMediaPluginClass(String mediaPluginClass)
     {
         this.mediaPluginClass = mediaPluginClass;
+    }
+    public void setVoiceRecognitionPluginClass(String voiceRecognitionPluginClass)
+    {
+        this.voiceRecognitionPluginClass = voiceRecognitionPluginClass;
     }
 
 }

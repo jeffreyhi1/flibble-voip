@@ -126,6 +126,7 @@ public class CallManager
         boolean enableStun = false;
         boolean useSoundCard = false;
         String mediaPluginClass = null;
+        String voiceRecognitionPluginClass = null;
         String domain;
 
         localIp = props.getProperty("localIp");
@@ -162,6 +163,7 @@ public class CallManager
                     .getProperty("useSoundCard"));
         }
         mediaPluginClass = props.getProperty("mediaPluginClass");
+        voiceRecognitionPluginClass = props.getProperty("voiceRecognitionPluginClass");
 
         return initialize(localIp,
                 udpSipPort,
@@ -173,7 +175,8 @@ public class CallManager
                 stunServer,
                 userAgent,
                 useSoundCard,
-                mediaPluginClass);
+                mediaPluginClass, 
+                voiceRecognitionPluginClass);
     }
 
     /**
@@ -203,6 +206,8 @@ public class CallManager
      * @param mediaPluginClass 
      *            Full classpath and name of the the media plugin class.  Can
      *            be set to null to indicate usage of the default media plugin.
+     * @param voiceRecognitionPluginClass 
+     *            Full classpath and name of the the voice recognition plugin class.
      */
     public FlibbleResult initialize(String localIp,
             int udpSipPort,
@@ -214,7 +219,8 @@ public class CallManager
             String stunServer,
             String userAgent,
             boolean useSoundCard,
-            String mediaPluginClass) throws IllegalArgumentException
+            String mediaPluginClass,
+            String voiceRecognitionPluginClass) throws IllegalArgumentException
     {
         this.localIp = localIp;
         this.udpSipPort = udpSipPort;
@@ -302,6 +308,7 @@ public class CallManager
         InternalCallManager.getInstance().setMediaSocketManager(this,
                 new MediaSocketManager(this, mediaPortStart, mediaPortEnd));
         InternalCallManager.getInstance().setMediaPluginClass(mediaPluginClass);
+        InternalCallManager.getInstance().setVoiceRecognitionPluginClass(voiceRecognitionPluginClass);
         return FlibbleResult.RESULT_SUCCESS;
     }
 
