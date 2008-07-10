@@ -18,9 +18,6 @@
  ******************************************************************************/
 package com.sipresponse.receivecall;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import com.sipresponse.flibblecallmgr.CallManager;
 import com.sipresponse.flibblecallmgr.Event;
 import com.sipresponse.flibblecallmgr.EventCode;
