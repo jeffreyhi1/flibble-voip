@@ -24,4 +24,5 @@ public enum EventType
     CALL,
     MEDIA,
     SYSTEM,
+    VOICE_RECOGNITION
 }

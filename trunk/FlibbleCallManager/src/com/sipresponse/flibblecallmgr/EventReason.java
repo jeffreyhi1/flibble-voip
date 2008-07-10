@@ -42,5 +42,8 @@ public enum EventReason
     LINE_NETWORK,
     
     // MEDIA REAONS
-    MEDIA_NORMAL
+    MEDIA_NORMAL,
+    
+    // VOICE RECOGNITION REASONS
+    VR_NORMAL,
 }

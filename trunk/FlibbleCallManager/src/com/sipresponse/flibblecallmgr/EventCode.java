@@ -48,4 +48,8 @@ public enum EventCode
     // MEDIA CODES
     MEDIA_END_OF_FILE,
     MEDIA_DTMF,
+    
+    // VOICE_RECOGNITION
+    VR_PHRASE_MATCH,
+    VR_PHRASE_NO_MATCH
 }
