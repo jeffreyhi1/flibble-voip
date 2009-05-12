@@ -14,7 +14,8 @@ import com.sun.media.renderer.audio.device.AudioOutput;
 
 public class CustomSoundRenderer extends JavaSoundRenderer
 {
-    private CustomSoundOutput customSoundOutput;
+
+	private CustomSoundOutput customSoundOutput;
 
     int deviceIndex;
 
@@ -62,5 +63,14 @@ public class CustomSoundRenderer extends JavaSoundRenderer
         }
         return gain;
     }
+
+	public void close()
+    {
+		super.close();
+		if (null != customSoundOutput)
+		{
+			customSoundOutput.stop();
+		}
+	}
 
 }
